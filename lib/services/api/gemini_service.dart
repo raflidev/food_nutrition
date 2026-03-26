@@ -7,7 +7,7 @@ class GeminiService {
   final GenerativeModel _model;
 
   GeminiService(String apiKey) 
-      : _model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
+      : _model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey);
 
   Future<NutritionInfo?> getNutritionInfo(String foodName) async {
     final prompt = '''

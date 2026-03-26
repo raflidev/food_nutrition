@@ -151,10 +151,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         await classifier.initialize();
         // Step 2: Classify
         final prediction = await classifier.classifyImage(cropped);
-        
+        debugPrint("=== PREDICTION RESULT: $prediction, label=${prediction?.label}, conf=${prediction?.confidence}");
+
         if (!mounted) return;
-        Navigator.pop(context); // Tutup layar Loading
-        
+        Navigator.of(context, rootNavigator: true).pop(); // Tutup layar Loading
+
         if (prediction != null) {
           context.push('/analysis', extra: {
             'image': cropped,
@@ -167,7 +168,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         }
       } catch (e) {
         if (!mounted) return;
-        Navigator.pop(context); // Tutup layar Loading
+        Navigator.of(context, rootNavigator: true).pop(); // Tutup layar Loading
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error AI Processing: $e')),
         );
@@ -262,7 +263,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildCircularButton(Icons.close, () => context.pop()),
+                _buildCircularButton(Icons.close, () => context.go('/dashboard')),
                 Row(
                   children: [
                     _buildCircularButton(_getFlashIcon(), _toggleFlash),
@@ -281,21 +282,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             right: 0,
             child: Column(
               children: [
-                // Mode Selector
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildModeText('Barcode', false),
-                      const SizedBox(width: 32),
-                      _buildModeText('AI Scan', true),
-                      const SizedBox(width: 32),
-                      _buildModeText('Manual', false),
-                    ],
-                  ),
-                ),
-                
                 // Camera Actions
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -309,25 +295,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildModeText(String text, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.only(bottom: 4),
-      decoration: isActive 
-          ? const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.primaryContainer, width: 2)))
-          : null,
-      child: Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          color: isActive ? AppColors.primaryContainer : Colors.white54,
-          fontSize: 12,
-          fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
-          letterSpacing: 2,
-        ),
       ),
     );
   }

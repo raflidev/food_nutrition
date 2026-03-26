@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
@@ -72,84 +71,73 @@ class ClassifierService {
 
     final modelPath = _modelFile?.path ?? _localModelPath;
 
+    // Load model bytes di main isolate
+    final Uint8List modelBytes;
     try {
-      // Menjalankan inferensi di Isolate
-      final resultMap = await Isolate.run(() => _runInferenceInIsolate(
-        imageFile.path, 
-        modelPath,
-      ));
-
-      if (resultMap == null) return null;
-
-      final int maxIdx = resultMap['index'] as int;
-      final double confidence = resultMap['confidence'] as double;
-
-      String labelName = "Unknown";
-      if (_labels != null && maxIdx >= 0 && maxIdx < _labels!.length) {
-        labelName = _labels![maxIdx];
+      if (modelPath.startsWith('assets/')) {
+        final byteData = await rootBundle.load(modelPath);
+        modelBytes = byteData.buffer.asUint8List();
+      } else {
+        modelBytes = await File(modelPath).readAsBytes();
       }
-
-      return PredictionResult(label: labelName, confidence: confidence);
     } catch (e) {
-      debugPrint("Classification error: $e");
+      debugPrint("Failed to load model bytes: $e");
       return null;
     }
+
+    // Jalankan inference di main isolate (loading dialog sudah tampil, jank tidak masalah)
+    // Isolate.run() tidak bisa akses FFI bindings tflite yang diinisialisasi di Flutter engine
+    return _runInference(imageFile.path, modelBytes);
   }
 
-  /// Fungsi ini berjalan di thread ISOLATE
-  static Future<Map<String, dynamic>?> _runInferenceInIsolate(String imagePath, String modelPath) async {
+  PredictionResult? _runInference(String imagePath, Uint8List modelBytes) {
     Interpreter? interpreter;
     try {
-      // 1. Load model di Isolate
-      if (modelPath.startsWith('assets/')) {
-        interpreter = await Interpreter.fromAsset(modelPath);
-      } else {
-        interpreter = Interpreter.fromFile(File(modelPath));
-      }
+      interpreter = Interpreter.fromBuffer(modelBytes);
 
-      // 2. Preprocess input
-      // Asumsi input model 224x224x3 (Float32) atau (Uint8)
-      int inputSize = 224;
-      final inputBytes = InferenceIsolateHelper.preprocessImage(imagePath, inputSize);
-      if (inputBytes == null) return null;
-
-      // 3. Siapkan buffer output (contoh output shape: [1, N])
+      final inputTensor = interpreter.getInputTensor(0);
       final outputTensor = interpreter.getOutputTensor(0);
-      final numClasses = outputTensor.shape[1]; // misal 2024 labels
-      
-      // Karena kita gak tahu tipe quantized atau float, 
-      // umumnya output adalah list float ([1][numClasses]).
-      var outputBuffer = [List<double>.filled(numClasses, 0.0)];
+      final inputShape = inputTensor.shape; // [1, 192, 192, 3]
+      final inputSize = inputShape[1];      // 192
+      final numClasses = outputTensor.shape.last; // 2024
 
-      // 4. Run inference (!)
-      interpreter.run(inputBytes, outputBuffer);
+      // Preprocess: uint8 flat list, lalu reshape ke [1, inputSize, inputSize, 3]
+      final flatInput = InferenceIsolateHelper.preprocessImage(imagePath, inputSize);
+      if (flatInput == null) {
+        debugPrint("Preprocessing failed.");
+        return null;
+      }
+      final input = flatInput.reshape(inputShape);
 
-      // 5. Postprocess (cari nilai maksimum / ArgMax)
-      final List<double> confidences = outputBuffer[0];
-      double maxConf = 0;
+      // Output uint8: [1, numClasses]
+      final outputBuffer = [List<int>.filled(numClasses, 0)];
+
+      interpreter.run(input, outputBuffer);
+      interpreter.close();
+
+      final scores = outputBuffer[0];
+      int maxScore = 0;
       int maxIdx = -1;
-      
-      for (int i = 0; i < confidences.length; i++) {
-        if (confidences[i] > maxConf) {
-          maxConf = confidences[i];
+      for (int i = 0; i < scores.length; i++) {
+        if (scores[i] > maxScore) {
+          maxScore = scores[i];
           maxIdx = i;
         }
       }
 
-      interpreter.close();
+      debugPrint("Top prediction: idx=$maxIdx, score=$maxScore");
 
-      return {
-        'index': maxIdx,
-        'confidence': maxConf,
-      };
+      if (maxIdx < 0) return null;
 
+      final labelName = (_labels != null && maxIdx < _labels!.length)
+          ? _labels![maxIdx]
+          : "Unknown";
+
+      return PredictionResult(label: labelName, confidence: maxScore / 255.0);
     } catch (e) {
       interpreter?.close();
-      // Return dummy for testing UI if model missing
-      return {
-        'index': 4, // Poke Bowl
-        'confidence': 0.85, 
-      };
+      debugPrint("Inference error: $e");
+      return null;
     }
   }
 }

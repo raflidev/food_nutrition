@@ -24,20 +24,16 @@ class AnalysisResultPage extends ConsumerStatefulWidget {
 }
 
 class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
-  // In a real app, GET THIS KEY FROM FLAVOR CONFIG / ENV. For submission, provide a placeholder or text field.
   final String _geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-  
-  // A simple flag to trigger an API key input dialog if missing
   bool _needsKeyInput = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_geminiApiKey.isEmpty) {
-        setState(() {
-          _needsKeyInput = true;
-        });
+        setState(() => _needsKeyInput = true);
       } else {
         _loadData(_geminiApiKey);
       }
@@ -52,314 +48,492 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(analysisProvider);
 
+    if (_needsKeyInput) return _buildApiKeyScreen();
+
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text("Analysis Result"),
-        actions: [
-          IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
-        ],
-      ),
-      body: _needsKeyInput
-          ? _buildApiKeyInput()
-          : (state.isLoading
-              ? _buildLoading()
-              : _buildContent(state)),
-    );
-  }
-
-  Widget _buildApiKeyInput() {
-    final controller = TextEditingController();
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: AppColors.surface,
+      body: Stack(
         children: [
-          const Icon(Icons.key, size: 64, color: AppColors.primary),
-          const SizedBox(height: 24),
-          Text(
-            "Gemini API Key Required",
-            style: AppTypography.headlineMedium,
-            textAlign: TextAlign.center,
+          _buildBody(state),
+          // Back button overlay
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 16,
+            child: _buildCircleButton(Icons.arrow_back, () => context.pop()),
           ),
-          const SizedBox(height: 8),
-          Text(
-            "Untuk mengambil data nutrisi dari AI, masukkan API Key Anda.",
-            style: AppTypography.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: "API Key",
+          // Add to log sticky button
+          if (!state.isLoading && state.nutritionInfo != null)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _buildStickyButton(state),
             ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                setState(() {
-                  _needsKeyInput = false;
-                });
-                _loadData(controller.text);
-              }
-            },
-            child: const Text("Lanjutkan"),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildLoading() {
-    return const Center(
-      child: CircularProgressIndicator(color: AppColors.primary),
-    );
-  }
+  Widget _buildBody(AnalysisState state) {
+    return CustomScrollView(
+      slivers: [
+        // Hero image + food name
+        SliverToBoxAdapter(child: _buildHeroSection()),
 
-  Widget _buildContent(AnalysisState state) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 100), // Space for fab/footer
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildHeader(widget.imageFile, widget.prediction),
-          if (state.error != null) _buildErrorCard(state.error!),
+        if (state.isLoading)
+          SliverFillRemaining(child: _buildLoadingState())
+        else ...[
+          if (state.error != null)
+            SliverToBoxAdapter(child: _buildErrorBanner(state.error!)),
           if (state.nutritionInfo != null)
-            _buildNutritionSection(state.nutritionInfo!),
+            SliverToBoxAdapter(child: _buildNutritionSection(state.nutritionInfo!)),
           if (state.mealInfo != null)
-            _buildRecipeSection(state.mealInfo!),
-          if (state.nutritionInfo != null)
-            _buildActionFooter(state.nutritionInfo!),
+            SliverToBoxAdapter(child: _buildRecipeSection(state.mealInfo!)),
+          // Bottom padding for sticky button
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
-      ),
+      ],
     );
   }
 
-  Widget _buildHeader(File? imageFile, PredictionResult prediction) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        children: [
-          // Image
-          if (imageFile != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.file(
-                imageFile,
-                height: 240,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            )
-          else
-            Container(
-              height: 240,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Center(child: Icon(Icons.restaurant, size: 64, color: AppColors.outlineVariant)),
-            ),
-          const SizedBox(height: 24),
-          
-          // Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer,
-              borderRadius: BorderRadius.circular(32),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.auto_awesome, size: 16, color: AppColors.onPrimaryContainer),
-                const SizedBox(width: 8),
-                Text(
-                  "AI ANALYZED",
-                  style: AppTypography.labelSmall.copyWith(color: AppColors.onPrimaryContainer),
+  Widget _buildHeroSection() {
+    final confidence = (widget.prediction.confidence * 100).toStringAsFixed(1);
+    final screenHeight = 320.0;
+
+    return Stack(
+      children: [
+        // Food image
+        SizedBox(
+          height: screenHeight,
+          width: double.infinity,
+          child: widget.imageFile != null
+              ? Image.file(widget.imageFile!, fit: BoxFit.cover)
+              : Container(
+                  color: AppColors.surfaceContainerHigh,
+                  child: const Center(
+                    child: Icon(Icons.restaurant, size: 72, color: AppColors.outlineVariant),
+                  ),
                 ),
-              ],
+        ),
+        // Gradient overlay
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withAlpha(180),
+                ],
+                stops: const [0.45, 1.0],
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          
-          // Food Name & Confidence
-          Text(
-            prediction.label,
-            style: AppTypography.displaySmall,
-            textAlign: TextAlign.center,
+        ),
+        // Food name + confidence at bottom of image
+        Positioned(
+          left: 20,
+          right: 20,
+          bottom: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // AI badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.auto_awesome, size: 12, color: AppColors.onPrimaryContainer),
+                    const SizedBox(width: 4),
+                    Text("AI ANALYZED",
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppColors.onPrimaryContainer,
+                          fontWeight: FontWeight.w800,
+                        )),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.prediction.label,
+                style: AppTypography.headlineMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  shadows: [Shadow(blurRadius: 8, color: Colors.black.withAlpha(100))],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              // Confidence bar
+              Row(
+                children: [
+                  Text("Confidence $confidence%",
+                      style: AppTypography.labelSmall.copyWith(color: Colors.white70)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: widget.prediction.confidence,
+                        backgroundColor: Colors.white24,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryContainer),
+                        minHeight: 5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            "Confidence: ${(prediction.confidence * 100).toStringAsFixed(1)}%",
-            style: AppTypography.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildErrorCard(String error) {
+  Widget _buildLoadingState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(color: AppColors.primary),
+        const SizedBox(height: 16),
+        Text("Menganalisis nutrisi...",
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.onSurfaceVariant)),
+      ],
+    );
+  }
+
+  Widget _buildErrorBanner(String error) {
     return Container(
-      margin: const EdgeInsets.all(24),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.errorContainer,
+        color: AppColors.errorContainer.withAlpha(30),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.error.withAlpha(60)),
       ),
-      child: Text(
-        "Oops! $error",
-        style: TextStyle(color: AppColors.onErrorContainer),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: AppColors.error, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(error,
+                style: AppTypography.bodySmall.copyWith(color: AppColors.error)),
+          ),
+        ],
       ),
     );
   }
 
-  // Gemini Nutrition output
   Widget _buildNutritionSection(dynamic info) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Estimasi Nutrisi (Gemini AI)", style: AppTypography.titleLarge),
-          const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildMacroCard("Kalori", info.calories, AppColors.primaryContainer)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildMacroCard("Protein", info.protein, AppColors.tertiaryContainer)),
+              const Icon(Icons.bar_chart_rounded, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text("Estimasi Nutrisi", style: AppTypography.titleMedium),
+              const Spacer(),
+              Text("per 1 porsi",
+                  style: AppTypography.labelSmall.copyWith(color: AppColors.onSurfaceVariant)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+          // Calories card (wide)
+          _buildCalorieCard(info.calories),
+          const SizedBox(height: 12),
+          // Macro grid 3 columns
           Row(
             children: [
-              Expanded(child: _buildMacroCard("Lemak", info.fat, AppColors.surfaceContainerHigh)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildMacroCard("Karbo", info.carbohydrates, AppColors.surfaceContainerHigh)),
+              Expanded(child: _buildMacroTile(Icons.egg_outlined, "Protein", info.protein, AppColors.tertiaryContainer, AppColors.onTertiaryContainer)),
+              const SizedBox(width: 10),
+              Expanded(child: _buildMacroTile(Icons.grain_outlined, "Karbo", info.carbohydrates, AppColors.secondaryContainer, AppColors.onSecondaryContainer)),
+              const SizedBox(width: 10),
+              Expanded(child: _buildMacroTile(Icons.opacity_outlined, "Lemak", info.fat, AppColors.surfaceContainerHigh, AppColors.onSurface)),
             ],
           ),
-          const SizedBox(height: 16),
-          // Fiber could fit below or beside
-          _buildMacroCard("Serat", info.fiber, AppColors.surfaceContainerHigh),
+          const SizedBox(height: 10),
+          _buildFiberRow(info.fiber),
         ],
       ),
     );
   }
 
-  Widget _buildMacroCard(String label, String value, Color color) {
+  Widget _buildCalorieCard(String calories) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(value, style: AppTypography.headlineMedium),
-          const SizedBox(height: 4),
-          Text(label, style: AppTypography.labelMedium.copyWith(color: AppColors.onSurfaceVariant)),
+          const Icon(Icons.local_fire_department, color: AppColors.primaryContainer, size: 32),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(calories,
+                  style: AppTypography.headlineMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+              Text("Kalori",
+                  style: AppTypography.labelMedium.copyWith(color: Colors.white70)),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  // MealDB output
+  Widget _buildMacroTile(IconData icon, String label, String value, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: fg),
+          const SizedBox(height: 8),
+          Text(value,
+              style: AppTypography.titleMedium.copyWith(color: fg, fontWeight: FontWeight.w700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+          Text(label,
+              style: AppTypography.labelSmall.copyWith(color: fg.withAlpha(180))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiberRow(String fiber) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.grass_outlined, size: 18, color: AppColors.tertiary),
+          const SizedBox(width: 10),
+          Text("Serat", style: AppTypography.labelMedium.copyWith(color: AppColors.onSurfaceVariant)),
+          const Spacer(),
+          Text(fiber, style: AppTypography.titleMedium.copyWith(color: AppColors.tertiary)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRecipeSection(dynamic meal) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Referensi Resep (MealDB)", style: AppTypography.titleLarge),
-          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Icon(Icons.menu_book_outlined, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text("Referensi Resep", style: AppTypography.titleMedium),
+            ],
+          ),
+          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withAlpha(6), blurRadius: 10, offset: const Offset(0, 2)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(meal.name, style: AppTypography.titleMedium),
-                const SizedBox(height: 12),
                 if (meal.ingredients.isNotEmpty) ...[
-                  Text("Bahan Utama:", style: AppTypography.labelMedium),
+                  const SizedBox(height: 12),
+                  Text("Bahan utama",
+                      style: AppTypography.labelSmall.copyWith(color: AppColors.onSurfaceVariant)),
                   const SizedBox(height: 8),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: List.generate(
-                      meal.ingredients.length > 5 ? 5 : meal.ingredients.length, // Show up to 5
-                      (index) => Chip(
-                        label: Text(
-                          "${meal.ingredients[index]} ${meal.measures[index].isNotEmpty ? '(${meal.measures[index]})' : ''}".trim(),
-                          style: const TextStyle(fontSize: 12),
+                      meal.ingredients.length > 6 ? 6 : meal.ingredients.length,
+                      (i) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        backgroundColor: AppColors.surface,
-                        side: BorderSide.none,
+                        child: Text(
+                          meal.ingredients[i],
+                          style: AppTypography.labelSmall,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
                 ],
                 if (meal.instructions != null) ...[
-                  Text("Instruksi:", style: AppTypography.labelMedium),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 14),
+                  const Divider(height: 1),
+                  const SizedBox(height: 14),
+                  Text("Cara masak",
+                      style: AppTypography.labelSmall.copyWith(color: AppColors.onSurfaceVariant)),
+                  const SizedBox(height: 6),
                   Text(
                     meal.instructions!,
-                    style: AppTypography.bodySmall,
-                    maxLines: 5,
+                    style: AppTypography.bodySmall.copyWith(height: 1.6),
+                    maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ]
+                ],
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildActionFooter(dynamic info) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+  Widget _buildStickyButton(AnalysisState state) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 16, offset: const Offset(0, -4))],
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          onPressed: _isSaving ? null : () => _saveToLog(state.nutritionInfo!),
+          icon: _isSaving
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.add, color: Colors.white),
+          label: Text(_isSaving ? "Menyimpan..." : "Simpan ke Riwayat",
+              style: AppTypography.titleMedium.copyWith(color: Colors.white)),
         ),
-        onPressed: () async {
-          final kaloriStr = info.calories.toString().replaceAll(RegExp(r'[^0-9]'), '');
-          final proteinStr = info.protein.toString().replaceAll(RegExp(r'[^0-9]'), '');
-          
-          final log = MealLog(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            label: widget.prediction.label,
-            imagePath: widget.imageFile?.path ?? '',
-            calories: int.tryParse(kaloriStr) ?? 0,
-            protein: int.tryParse(proteinStr) ?? 0,
-            date: DateTime.now(),
-          );
-
-          await ref.read(historyProvider.notifier).addMeal(log);
-          
-          if (mounted) {
-            context.go('/history');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Meal saved to history!')),
-            );
-          }
-        },
-        child: const Text('Add to Log'),
       ),
     );
+  }
+
+  Widget _buildCircleButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(80),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildApiKeyScreen() {
+    final controller = TextEditingController();
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.key_rounded, size: 32, color: AppColors.onPrimaryContainer),
+              ),
+              const SizedBox(height: 24),
+              Text("API Key Diperlukan", style: AppTypography.headlineMedium, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text(
+                "Masukkan Gemini API Key untuk mendapatkan informasi nutrisi.",
+                style: AppTypography.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  labelText: "Gemini API Key",
+                  prefixIcon: const Icon(Icons.vpn_key_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: () {
+                  if (controller.text.isNotEmpty) {
+                    setState(() => _needsKeyInput = false);
+                    _loadData(controller.text);
+                  }
+                },
+                child: const Text("Lanjutkan"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveToLog(dynamic info) async {
+    setState(() => _isSaving = true);
+    final kaloriStr = info.calories.toString().replaceAll(RegExp(r'[^0-9]'), '');
+    final proteinStr = info.protein.toString().replaceAll(RegExp(r'[^0-9]'), '');
+
+    final log = MealLog(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      label: widget.prediction.label,
+      imagePath: widget.imageFile?.path ?? '',
+      calories: int.tryParse(kaloriStr) ?? 0,
+      protein: int.tryParse(proteinStr) ?? 0,
+      date: DateTime.now(),
+    );
+
+    await ref.read(historyProvider.notifier).addMeal(log);
+
+    if (mounted) {
+      context.go('/history');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Berhasil disimpan ke riwayat!'),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 }

@@ -39,7 +39,9 @@ class DashboardPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeader(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 12),
+              _buildGeminiStatus(),
+              const SizedBox(height: 20),
               _buildEnergyCard(totalCalories),
               const SizedBox(height: 24),
               _buildMacroRings(totalProtein),
@@ -70,8 +72,8 @@ class DashboardPage extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Selamat pagi,", style: AppTypography.labelSmall),
-                Text("Explorer", style: AppTypography.titleMedium),
+                Text("Welcome", style: AppTypography.labelSmall),
+                Text("Healthy People", style: AppTypography.titleMedium),
               ],
             )
           ],
@@ -81,6 +83,43 @@ class DashboardPage extends ConsumerWidget {
           icon: const Icon(Icons.notifications_outlined),
         )
       ],
+    );
+  }
+
+  Widget _buildGeminiStatus() {
+    const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+    final isReady = apiKey.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isReady
+            ? AppColors.primary.withAlpha(15)
+            : AppColors.error.withAlpha(15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isReady
+              ? AppColors.primary.withAlpha(60)
+              : AppColors.error.withAlpha(60),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isReady ? Icons.check_circle_outline : Icons.warning_amber_outlined,
+            size: 16,
+            color: isReady ? AppColors.primary : AppColors.error,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isReady ? 'Gemini AI siap digunakan' : 'Gemini API Key belum dikonfigurasi',
+            style: AppTypography.labelMedium.copyWith(
+              color: isReady ? AppColors.primary : AppColors.error,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
