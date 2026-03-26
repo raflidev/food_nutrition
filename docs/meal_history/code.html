@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Meal History | The Living Lab</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-dim": "#b92902",
+              "inverse-on-surface": "#9b9d9c",
+              "secondary-fixed": "#d7e4ec",
+              "secondary-fixed-dim": "#c9d6de",
+              "surface-bright": "#f5f7f5",
+              "surface-container-high": "#e0e3e1",
+              "on-primary-container": "#005d22",
+              "error": "#b02500",
+              "inverse-surface": "#0b0f0e",
+              "inverse-primary": "#5cfd80",
+              "on-tertiary-fixed-variant": "#005c64",
+              "error-container": "#f95630",
+              "secondary-dim": "#455158",
+              "on-tertiary-container": "#005159",
+              "tertiary-fixed": "#10eafe",
+              "on-surface": "#2c2f2e",
+              "on-error-container": "#520c00",
+              "surface-container-highest": "#d9dedb",
+              "on-tertiary": "#d4f9ff",
+              "on-tertiary-fixed": "#003d43",
+              "tertiary-fixed-dim": "#00dbee",
+              "surface-container": "#e6e9e7",
+              "on-primary": "#cfffce",
+              "primary-fixed-dim": "#4bee74",
+              "on-secondary-fixed-variant": "#515d64",
+              "surface-container-low": "#eff1ef",
+              "on-secondary": "#e8f5fd",
+              "primary": "#006a28",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-fixed": "#354147",
+              "on-primary-fixed-variant": "#006827",
+              "tertiary-dim": "#005861",
+              "surface-variant": "#d9dedb",
+              "surface-dim": "#d1d5d3",
+              "primary-container": "#5cfd80",
+              "on-background": "#2c2f2e",
+              "secondary-container": "#d7e4ec",
+              "tertiary": "#00656f",
+              "on-surface-variant": "#595c5b",
+              "background": "#f5f7f5",
+              "outline": "#747776",
+              "outline-variant": "#abaeac",
+              "on-error": "#ffefec",
+              "surface-tint": "#006a28",
+              "on-secondary-container": "#47545a",
+              "surface": "#f5f7f5",
+              "on-primary-fixed": "#004819",
+              "secondary": "#515d64",
+              "primary-fixed": "#5cfd80",
+              "primary-dim": "#005d22",
+              "tertiary-container": "#10eafe"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #f5f7f5;
+      }
+      .glass-header {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="User profile photo" data-alt="Close up portrait of a smiling woman" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHaWhJkCnYC7dBr1LaaFWyWCOp955ZsPsPVlbSzmx4DnvB2MgumhpivSI9ggVG36KsJtZMFTYEi_27J_mOI5fUqMBNKa3G4irB5NaFBvEusQUOy3z-B24NUlX-WLRaIp0UCWi0vSJcrGCZFWuNUI-sjE1yKC36kudyxA5BTvLWK58xoVK7vNolwgV0kyLOgtOG9-8svOIQFZb13sP4cLIrF9WcofORQ1jU4tMheCFearNbFEMGnch30ZRD4D7WKK6HPpgWDz6OF2Kg"/>
+</div>
+<h1 class="font-headline font-extrabold text-xl tracking-tight text-green-900 dark:text-green-500">The Living Lab</h1>
+</div>
+<button class="text-zinc-500 dark:text-zinc-400 hover:opacity-80 transition-opacity p-2 active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto">
+<!-- Section Header: History Title -->
+<div class="mb-8">
+<h2 class="font-headline font-bold text-3xl text-on-surface mb-2">Meal History</h2>
+<p class="text-on-surface-variant font-body">Review your organic progress and nutrient intake.</p>
+</div>
+<!-- History Content -->
+<div class="space-y-10">
+<!-- Day Group: Today -->
+<section>
+<div class="flex items-center justify-between mb-4 sticky top-20 bg-surface/90 py-2 z-10">
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-widest text-primary">Today — Oct 24</h3>
+<span class="text-xs font-label font-semibold text-on-surface-variant">1,840 kcal total</span>
+</div>
+<div class="space-y-4">
+<!-- Meal Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 flex items-center gap-4 transition-transform active:scale-[0.98] duration-200">
+<div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
+<img alt="Avocado Toast" class="w-full h-full object-cover" data-alt="Healthy avocado toast with poached egg on top" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtkK2PlAni2nWGeXTa534sfPPKpVvXHnxRU2tCWzXxIdGEtMGYdboVKmUeiD2PCsRhFC_dhVSi6-tGfeMFMgc-OOJzyEEM97OHmQRLRpNw_qNUqsxm8ScATP3emW8ZkKqJFlZiGXBpDgF99GPdntL4wEHD0nELUf6FXBrcw-hyCPRDxHs52K2l1neL_SXSqz0sltodW8Stl-npE1kd2hgvEgDbCs37E4BlXvUp-KWkf5-gDQgO9IKeImxr4VI8ptneDDHLuFINO_87"/>
+</div>
+<div class="flex-grow">
+<span class="text-[10px] font-bold uppercase tracking-wider text-tertiary mb-1 block">Breakfast</span>
+<h4 class="font-headline font-bold text-lg leading-tight mb-1">Avocado &amp; Poached Egg</h4>
+<div class="flex gap-4">
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">420 <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">kcal</span></span>
+</div>
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">18g <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">protein</span></span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Meal Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 flex items-center gap-4 transition-transform active:scale-[0.98] duration-200">
+<div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
+<img alt="Quinoa Bowl" class="w-full h-full object-cover" data-alt="Vibrant mediterranean quinoa salad bowl with chickpeas" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoa4-RBEEBh8rVkkCx3hVP6GLv7ZCNc2KIWi1x4grF1bdISqNKkuqa1eWbyrjOwGsYW-MlA1Lt83-TJjjBMXoA3NdGlXzRK0GMuaunm-U6obJopWsCchDLxhkQRT8U8LqsffnsB6mWUPBciedmmya6WwnvVHVwxUpHvSqvZXavG_Y2n_Ku_bg4IHLn2uYVaRT6P2xJbOlRojYr3_sAHQlvGwIrxWql4UwQZia8SdOWOSonLuV1ZvLDqbexyTF1kC5OfsfdJFuJR8Pq"/>
+</div>
+<div class="flex-grow">
+<span class="text-[10px] font-bold uppercase tracking-wider text-tertiary mb-1 block">Lunch</span>
+<h4 class="font-headline font-bold text-lg leading-tight mb-1">Mediterranean Quinoa</h4>
+<div class="flex gap-4">
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">650 <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">kcal</span></span>
+</div>
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">24g <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">protein</span></span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Day Group: Yesterday -->
+<section>
+<div class="flex items-center justify-between mb-4 sticky top-20 bg-surface/90 py-2 z-10">
+<h3 class="font-headline font-extrabold text-sm uppercase tracking-widest text-on-surface-variant">Yesterday — Oct 23</h3>
+<span class="text-xs font-label font-semibold text-on-surface-variant">2,100 kcal total</span>
+</div>
+<div class="space-y-4">
+<!-- Meal Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 flex items-center gap-4 transition-transform active:scale-[0.98] duration-200">
+<div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
+<img alt="Salmon Dinner" class="w-full h-full object-cover" data-alt="Grilled salmon fillet with steamed asparagus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB96mnqEKSqa6DIC1BTEGXE_6ATVxDUEi93BOMYIMRUGF6XybAJXs9CGybIA7gBt8UG8L2OK1AGvH8F1DP5bk6eHZskoJibanHJCShU4kVCpSl5JU4xWj2hLpx24CMTlzzKDeBhW3RLwnPmlJPG_FQ8sXilWYTxq11DjK08w7ux2riDrztx8XBbl3tKiBKV0LvcgLDSk94xOhP1hcmWQ8W8MFOQfBNyL2DCjIefE2Z82iSD53VnlJV7T8R26OeuccOa7-Vbb0eUi-b"/>
+</div>
+<div class="flex-grow">
+<span class="text-[10px] font-bold uppercase tracking-wider text-tertiary mb-1 block">Dinner</span>
+<h4 class="font-headline font-bold text-lg leading-tight mb-1">Miso Glazed Salmon</h4>
+<div class="flex gap-4">
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">780 <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">kcal</span></span>
+</div>
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">42g <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">protein</span></span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Meal Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 flex items-center gap-4 transition-transform active:scale-[0.98] duration-200">
+<div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
+<img alt="Green Smoothie" class="w-full h-full object-cover" data-alt="Refreshing green smoothie in a glass jar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcqVOOFiOCtCmHde71sXn1RHqLSaNJX3mkfj9UP07aSRLrcEUBROO5dibLcpPpsq5xdbuKM771BIMCbmjBiTaHH7L2sxnClLy2zgDSwsRWvuNm84E6rSbtVrEZiawnqfl57RZVaj247uozOWY4bVDgzgkQ-1RxYfSWv_QnuotBx8-7ajwc9Yj3JUAjZMLc49VG2a1ZcUvUauOJl3UqeDeFy0IxwOBZbtfNjaNhtEPyCdRcBA_FtpRso01m6hFZIVt-OXw9RHmZtVRC"/>
+</div>
+<div class="flex-grow">
+<span class="text-[10px] font-bold uppercase tracking-wider text-tertiary mb-1 block">Snack</span>
+<h4 class="font-headline font-bold text-lg leading-tight mb-1">Lab Green Smoothie</h4>
+<div class="flex gap-4">
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">250 <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">kcal</span></span>
+</div>
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-base">12g <span class="text-[10px] font-label font-medium text-on-surface-variant uppercase">protein</span></span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-lg shadow-[0_-8px_32px_rgba(0,0,0,0.06)] rounded-t-[2rem] border-t border-zinc-100 dark:border-zinc-800">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 px-5 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-full transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[11px] mt-1">Home</span>
+</a>
+<!-- Camera / Log -->
+<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 px-5 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-full transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="photo_camera">photo_camera</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[11px] mt-1">Camera</span>
+</a>
+<!-- History - ACTIVE -->
+<a class="flex flex-col items-center justify-center bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 rounded-full px-5 py-2 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[11px] mt-1">History</span>
+</a>
+</nav>
+<!-- FAB for adding new meal - Primary Action -->
+<button class="fixed right-6 bottom-28 w-14 h-14 bg-primary rounded-full text-on-primary flex items-center justify-center shadow-[0_8px_32px_rgba(0,106,40,0.3)] active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+</body></html>

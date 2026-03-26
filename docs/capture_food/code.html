@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-dim": "#b92902",
+              "inverse-on-surface": "#9b9d9c",
+              "secondary-fixed": "#d7e4ec",
+              "secondary-fixed-dim": "#c9d6de",
+              "surface-bright": "#f5f7f5",
+              "surface-container-high": "#e0e3e1",
+              "on-primary-container": "#005d22",
+              "error": "#b02500",
+              "inverse-surface": "#0b0f0e",
+              "inverse-primary": "#5cfd80",
+              "on-tertiary-fixed-variant": "#005c64",
+              "error-container": "#f95630",
+              "secondary-dim": "#455158",
+              "on-tertiary-container": "#005159",
+              "tertiary-fixed": "#10eafe",
+              "on-surface": "#2c2f2e",
+              "on-error-container": "#520c00",
+              "surface-container-highest": "#d9dedb",
+              "on-tertiary": "#d4f9ff",
+              "on-tertiary-fixed": "#003d43",
+              "tertiary-fixed-dim": "#00dbee",
+              "surface-container": "#e6e9e7",
+              "on-primary": "#cfffce",
+              "primary-fixed-dim": "#4bee74",
+              "on-secondary-fixed-variant": "#515d64",
+              "surface-container-low": "#eff1ef",
+              "on-secondary": "#e8f5fd",
+              "primary": "#006a28",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-fixed": "#354147",
+              "on-primary-fixed-variant": "#006827",
+              "tertiary-dim": "#005861",
+              "surface-variant": "#d9dedb",
+              "surface-dim": "#d1d5d3",
+              "primary-container": "#5cfd80",
+              "on-background": "#2c2f2e",
+              "secondary-container": "#d7e4ec",
+              "tertiary": "#00656f",
+              "on-surface-variant": "#595c5b",
+              "background": "#f5f7f5",
+              "outline": "#747776",
+              "outline-variant": "#abaeac",
+              "on-error": "#ffefec",
+              "surface-tint": "#006a28",
+              "on-secondary-container": "#47545a",
+              "surface": "#f5f7f5",
+              "on-primary-fixed": "#004819",
+              "secondary": "#515d64",
+              "primary-fixed": "#5cfd80",
+              "primary-dim": "#005d22",
+              "tertiary-container": "#10eafe"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scanner-grid {
+            background-image: 
+                linear-gradient(to right, rgba(92, 253, 128, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(92, 253, 128, 0.2) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .viewfinder-mask {
+            mask: radial-gradient(circle 140px at center, transparent 100%, black 100%);
+            -webkit-mask: radial-gradient(circle 140px at center, transparent 100%, black 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-black font-body overflow-hidden h-screen flex flex-col">
+<!-- Top Navigation Shell (Suppressing Global TopAppBar for Task-Focused Camera) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-6 bg-gradient-to-b from-black/60 to-transparent">
+<button class="w-10 h-10 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="flash_on">flash_on</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Viewfinder -->
+<main class="relative flex-1 flex flex-col items-center justify-center overflow-hidden">
+<!-- Live Camera Feed (Simulated) -->
+<div class="absolute inset-0 z-0">
+<img alt="Healthy bowl of food" class="w-full h-full object-cover" data-alt="Top down view of a fresh healthy salad bowl on a wooden table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhvQ4F_XwPbCMZ6G4R9kxtpVcIfbx3PIy1nU_-n_tMIk-P7PncLHPviBmMzCfB_K1Uomv3GBGCpn8PDUL5ziINoG_HvepBxzkJ_kEwYT2Q3vPsmFAKNvh1iAT4jc8rSMlVCuGvaxxhuaCZS4sDjA2zV8lWdcdOEB2v0lcBe65F0TRxJWLVpOojvTdr_U7Zd6YZ4wou92iFCVsS6QUTCtzK2K48VPnhl-pWmlk9ccwS1k5ucFOITajD03lSih0sRBSUJrAwRe3NMKB_"/>
+</div>
+<!-- Scanning Overlay -->
+<div class="absolute inset-0 z-10 flex flex-col items-center justify-center">
+<!-- Scanned Target Area -->
+<div class="relative w-72 h-72">
+<!-- Corners -->
+<div class="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-primary-container rounded-tl-3xl"></div>
+<div class="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-primary-container rounded-tr-3xl"></div>
+<div class="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-primary-container rounded-bl-3xl"></div>
+<div class="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-primary-container rounded-br-3xl"></div>
+<!-- Animated Scan Line (Static Representation) -->
+<div class="absolute top-1/2 left-4 right-4 h-0.5 bg-primary-container/60 shadow-[0_0_15px_rgba(92,253,128,0.8)]"></div>
+</div>
+<!-- Intelligent Feedback -->
+<div class="mt-12 px-6 py-3 bg-white/10 backdrop-blur-xl rounded-full border border-white/20 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-container" data-icon="restaurant" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+<span class="text-white font-semibold text-sm tracking-wide">Scanning... Poke Bowl detected</span>
+</div>
+</div>
+<!-- Smart Analysis Floating Cards -->
+<div class="absolute top-32 left-6 z-20 space-y-3">
+<div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 flex items-center gap-3 active:scale-95 transition-transform cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-primary/40 flex items-center justify-center text-primary-container text-xs font-bold">85%</div>
+<div class="pr-4">
+<p class="text-white/60 text-[10px] font-bold uppercase tracking-wider">Confidence</p>
+<p class="text-white text-xs font-semibold">Fresh Produce</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Controls & Navigation Shell (Integrated BottomNavBar from JSON) -->
+<div class="relative z-30 bg-gradient-to-t from-black via-black/80 to-transparent pt-20 pb-12 px-8">
+<!-- Capture Button Interface -->
+<div class="flex items-center justify-around mb-12">
+<!-- Gallery Preview -->
+<button class="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/20 active:scale-90 transition-transform">
+<img alt="Recent photo" class="w-full h-full object-cover" data-alt="Small thumbnail of recent food photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCX1uCarjUlR-WecKamP6wFDBsUUDgO24elJ1EG73b_aJDiki-eCKpwBWNcWRSQgESH6bcJXjPFiByk43endCmk72KK-N7X60d3V44ORpSg0foMjVlFW3Nyjzgsg4ZCka6yWNCO5T7aW0W7zDhLK6G_SlV3lZpOp5Ewec7tnlf-Fk10BIz28FpgcD6RLPOZ6n7t3r-4rUjP-3Sn4KGBeVWnwRc64PRPOeeIR1gntZkZ3ZVZqPHn9f0mXrvc8TDrfQO3wnqKEypSb0Ji"/>
+</button>
+<!-- Main Shutter -->
+<button class="relative group">
+<div class="absolute inset-0 bg-primary-container rounded-full blur-xl opacity-20 group-active:opacity-40 transition-opacity"></div>
+<div class="relative w-20 h-20 rounded-full border-4 border-white flex items-center justify-center p-1 group-active:scale-90 transition-transform duration-200">
+<div class="w-full h-full bg-white rounded-full"></div>
+</div>
+</button>
+<!-- Switch Camera -->
+<button class="w-12 h-12 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="cached">cached</span>
+</button>
+</div>
+<!-- Navigation Shell Implementation (Fixed Context: CAMERA) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-lg shadow-[0_-8px_32px_rgba(0,0,0,0.06)] rounded-t-[2rem] border-t border-zinc-100 dark:border-zinc-800">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 px-5 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-full transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[11px]">Home</span>
+</a>
+<!-- Camera (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 rounded-full px-5 py-2 transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="photo_camera" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[11px]">Camera</span>
+</a>
+<!-- History -->
+<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 px-5 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-full transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-['Plus_Jakarta_Sans'] font-semibold text-[11px]">History</span>
+</a>
+</nav>
+</div>
+<!-- Mode Selector Overlay (Horizontal Scrollable Pill) -->
+<div class="absolute bottom-40 left-0 w-full z-30 flex justify-center overflow-x-auto no-scrollbar pb-2">
+<div class="flex gap-4 px-10">
+<span class="text-white/40 text-xs font-bold uppercase tracking-widest whitespace-nowrap">Barcode</span>
+<span class="text-primary-container text-xs font-extrabold uppercase tracking-widest whitespace-nowrap border-b-2 border-primary-container pb-1">AI Scan</span>
+<span class="text-white/40 text-xs font-bold uppercase tracking-widest whitespace-nowrap">Manual</span>
+</div>
+</div>
+<!-- Health Score Orbit - Overlay Contextual Info -->
+<div class="absolute top-32 right-6 z-20">
+<div class="relative w-20 h-20 flex items-center justify-center">
+<!-- Progress Ring Background -->
+<svg class="absolute inset-0 w-full h-full -rotate-90">
+<circle class="text-white/10" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary-container drop-shadow-[0_0_8px_rgba(92,253,128,0.5)]" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213" stroke-dashoffset="60" stroke-width="6"></circle>
+</svg>
+<div class="bg-black/20 backdrop-blur-xl w-14 h-14 rounded-full flex flex-col items-center justify-center border border-white/10">
+<span class="text-white font-bold text-sm">740</span>
+<span class="text-white/60 text-[8px] font-bold uppercase tracking-tighter">kcal</span>
+</div>
+</div>
+</div>
+</body></html>
