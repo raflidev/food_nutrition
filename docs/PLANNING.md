@@ -13,7 +13,7 @@
 | **Deskripsi** | Aplikasi pelacak nutrisi makanan berbasis AI. User foto makanan → diidentifikasi oleh TFLite model → detail nutrisi dari Gemini API + resep dari MealDB API |
 | **Submission** | Dicoding — Flutter Expert: Machine Learning |
 | **Target Nilai** | **4 pts (Advanced)** di setiap kriteria |
-| **Status** | Proyek Flutter masih default counter app |
+| **Status** | ✅ Implementasi selesai — Submission ready |
 
 ---
 
@@ -211,36 +211,53 @@ Gambar diambil
 ## 5. Roadmap Implementasi (Per Phase)
 
 ### Phase 1: Foundation (Wajib Duluan)
-- [ ] Setup folder structure (feature-based)
-- [ ] Implementasi Design System → `ThemeData`, `ColorScheme`, typography
-- [ ] Setup navigasi (`go_router`)
-- [ ] Shared widgets: BottomNavBar, TopAppBar, ProgressRing, MealCard
-- [ ] Integrasi Google Fonts
+- [x] Setup folder structure (feature-based)
+- [x] Implementasi Design System → `ThemeData`, `ColorScheme`, typography
+- [x] Setup navigasi (`go_router`)
+- [x] Shared widgets: BottomNavBar, TopAppBar, ProgressRing, MealCard
+- [x] Integrasi Google Fonts
 
 ### Phase 2: Kriteria 1 — Image Capture
-- [ ] **Basic:** `image_picker` — pick dari kamera + galeri, tampilkan preview
-- [ ] **Skilled:** `image_cropper` — crop setelah pick
-- [ ] **Advanced:** `camera` library — custom camera screen dengan viewfinder overlay + camera stream
+- [x] **Basic:** `image_picker` — pick dari kamera + galeri, tampilkan preview
+- [x] **Skilled:** `image_cropper` — crop setelah pick
+- [x] **Advanced:** `camera` library — custom camera screen dengan viewfinder overlay + camera stream
+  - Fix: lifecycle dispose hanya saat `paused`, bukan `inactive`
+  - Fix: dispose controller lama sebelum init controller baru
+  - Dihapus: gallery button, "Ready to Scan" badge
 
 ### Phase 3: Kriteria 2 — Machine Learning
-- [ ] Download model TFLite dari Kaggle
-- [ ] **Basic:** Integrasi `tflite_flutter`, load model, jalankan inferensi
-- [ ] **Skilled:** Pindahkan inferensi ke `Isolate` (background thread)
-- [ ] **Advanced:** Setup Firebase project → upload model → `firebase_ml_model_downloader`
+- [x] Download model TFLite dari Kaggle
+- [x] **Basic:** Integrasi `tflite_flutter`, load model, jalankan inferensi
+- [x] **Skilled:** Pindahkan inferensi ke `Isolate` (background thread)
+- [x] **Advanced:** Setup Firebase project → upload model → `firebase_ml_model_downloader`
+  - Tambahan: Confidence threshold — tidak simpan ke riwayat jika < 10%
 
 ### Phase 4: Kriteria 3 — Halaman Prediksi
-- [ ] **Basic:** Analysis Result page — foto, nama makanan, confidence score
-- [ ] **Skilled:** Integrasi MealDB API — tampilkan resep, bahan, instruksi
-- [ ] **Advanced:** Integrasi Gemini API — tampilkan nutrisi (kalori, karbo, lemak, serat, protein)
+- [x] **Basic:** Analysis Result page — foto, nama makanan, confidence score
+- [x] **Skilled:** Integrasi MealDB API — tampilkan resep, bahan, instruksi
+  - Multi-strategy search fallback (full name → first word → two words → last word)
+  - Read more toggle untuk instruksi panjang
+- [x] **Advanced:** Integrasi Gemini API — tampilkan nutrisi (kalori, karbo, lemak, serat, protein)
+  - Graceful degradation: tetap tampilkan MealDB jika Gemini gagal
+  - Pesan error detail: koneksi / API key invalid / quota habis / timeout / server error
+  - Banner warning jika Gemini error atau MealDB null
 
 ### Phase 5: Dashboard & History
-- [ ] Nutrition Dashboard (Home) — daily summary, macro rings, timeline
-- [ ] Meal History — list grouped by date
-- [ ] Local storage untuk meal log (Hive/Drift)
+- [x] Nutrition Dashboard (Home) — daily summary, macro rings, timeline
+  - Status Gemini real-time (test call aktual, bukan hanya cek non-empty key)
+- [x] Meal History — list grouped by date
+  - Calendar filter bulanan (custom widget, tanpa package eksternal)
+  - Dot indicator pada tanggal yang ada meal
+- [x] Local storage untuk meal log (Hive) — MealLog dengan 5 field nutrisi
+  - Extras cache (`meal_extras` box) untuk NutritionInfo + MealInfo per meal ID
+  - Backward-compatible schema (try-catch untuk field baru)
+- [x] History Detail Page — tampilkan semua data tersimpan tanpa hit API
+  - Generate ulang nutrisi via Gemini jika data kosong
+  - Cleanup extras saat meal dihapus
 
 ### Phase 6: Polish
+- [x] Error handling & loading states (detail per fitur — lihat `FEATURES.md`)
 - [ ] Animasi & micro-interactions
-- [ ] Error handling & loading states
 - [ ] Testing
 
 ---
@@ -383,4 +400,12 @@ final prompt = 'Berikan informasi nutrisi untuk "$foodName" dalam format JSON: '
 
 ---
 
-*Terakhir di-update: 2026-03-19*
+---
+
+## 11. Dokumen Terkait
+
+- [`FEATURES.md`](./FEATURES.md) — Detail implementasi semua fitur yang ditambahkan
+
+---
+
+*Terakhir di-update: 2026-03-29*
