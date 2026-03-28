@@ -7,6 +7,8 @@ import '../features/history/presentation/pages/history_page.dart';
 import '../core/widgets/bottom_nav_bar.dart';
 import '../features/analysis/domain/models/prediction_result.dart';
 import '../features/analysis/presentation/pages/analysis_result_page.dart';
+import '../features/history/domain/models/meal_log.dart';
+import '../features/history/presentation/pages/history_detail_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -43,6 +45,13 @@ final GoRouter appRouter = GoRouter(
           imageFile: extras['image'] as File?,
           prediction: extras['prediction'] as PredictionResult,
         );
+      },
+    ),
+    GoRoute(
+      path: '/history/detail',
+      builder: (context, state) {
+        final meal = state.extra as MealLog;
+        return HistoryDetailPage(meal: meal);
       },
     ),
   ],

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/meal_log.dart';
 import '../../../../services/storage/meal_storage.dart';
+import '../../../../services/storage/meal_extras_storage.dart';
 
 class HistoryNotifier extends AsyncNotifier<List<MealLog>> {
   final _service = MealStorageService();
@@ -19,6 +20,7 @@ class HistoryNotifier extends AsyncNotifier<List<MealLog>> {
 
   Future<void> deleteMeal(String id) async {
     await _service.deleteMeal(id);
+    await MealExtrasStorageService().deleteExtras(id);
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _service.getMeals());
   }

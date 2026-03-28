@@ -40,4 +40,20 @@ class MealInfo {
       measures: foundMeasures,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'thumbUrl': thumbUrl,
+    'instructions': instructions,
+    'ingredients': ingredients,
+    'measures': measures,
+  };
+
+  factory MealInfo.fromMap(Map<String, dynamic> map) => MealInfo(
+    name: map['name'] as String? ?? 'Unknown',
+    thumbUrl: map['thumbUrl'] as String?,
+    instructions: map['instructions'] as String?,
+    ingredients: List<String>.from(map['ingredients'] as List? ?? []),
+    measures: List<String>.from(map['measures'] as List? ?? []),
+  );
 }

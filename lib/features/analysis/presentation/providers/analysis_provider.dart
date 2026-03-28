@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/meal_info.dart';
 import '../../domain/models/nutrition_info.dart';
@@ -9,12 +10,14 @@ class AnalysisState {
   final MealInfo? mealInfo;
   final NutritionInfo? nutritionInfo;
   final String? error;
+  final String? geminiError;
 
   AnalysisState({
-    this.isLoading = true, 
-    this.mealInfo, 
-    this.nutritionInfo, 
-    this.error
+    this.isLoading = true,
+    this.mealInfo,
+    this.nutritionInfo,
+    this.error,
+    this.geminiError,
   });
 }
 
@@ -22,27 +25,45 @@ class AnalysisNotifier extends Notifier<AnalysisState> {
   @override
   AnalysisState build() => AnalysisState();
 
+  Future<void> loadMealDbOnly(String foodName) async {
+    state = AnalysisState(isLoading: true);
+    MealInfo? mealResult;
+    try {
+      mealResult = await MealDbApi().searchMeal(foodName);
+    } catch (e) {
+      debugPrint('MealDB error: $e');
+    }
+    state = AnalysisState(isLoading: false, mealInfo: mealResult);
+  }
+
   Future<void> loadAnalysis(String foodName, String geminiApiKey) async {
     state = AnalysisState(isLoading: true);
-    
+
+    final mealApi = MealDbApi();
+    final geminiApi = GeminiService(geminiApiKey);
+
+    // Jalankan keduanya secara independen agar salah satu gagal tidak blok yang lain
+    MealInfo? mealResult;
     try {
-      final mealApi = MealDbApi();
-      final geminiApi = GeminiService(geminiApiKey);
-
-      // Fetch parallel
-      final results = await Future.wait([
-        mealApi.searchMeal(foodName),
-        geminiApi.getNutritionInfo(foodName),
-      ]);
-
-      state = AnalysisState(
-        isLoading: false,
-        mealInfo: results[0] as MealInfo?,
-        nutritionInfo: results[1] as NutritionInfo?,
-      );
+      mealResult = await mealApi.searchMeal(foodName);
     } catch (e) {
-      state = AnalysisState(isLoading: false, error: e.toString());
+      debugPrint('MealDB error: $e');
     }
+
+    NutritionInfo? nutritionResult;
+    String? geminiError;
+    try {
+      nutritionResult = await geminiApi.getNutritionInfo(foodName);
+    } catch (e) {
+      geminiError = e.toString();
+    }
+
+    state = AnalysisState(
+      isLoading: false,
+      mealInfo: mealResult,
+      nutritionInfo: nutritionResult,
+      geminiError: geminiError,
+    );
   }
 }
 

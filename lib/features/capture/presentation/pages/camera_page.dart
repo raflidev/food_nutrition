@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/image_utils.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../services/ml/classifier_service.dart';
@@ -42,7 +41,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   Future<void> _setupCameraController(CameraDescription description) async {
-    final oldController = _controller;
+    // Dispose dulu sebelum buat yang baru agar tidak 2 kamera terbuka sekaligus
+    if (_controller != null) {
+      await _controller!.dispose();
+      _controller = null;
+    }
+
     final newController = CameraController(
       description,
       ResolutionPreset.high,
@@ -62,10 +66,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     } catch (e) {
       debugPrint("Camera initialize error: $e");
     }
-
-    if (oldController != null) {
-      await oldController.dispose();
-    }
   }
 
   @override
@@ -76,17 +76,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    final CameraController? cameraController = _controller;
-    if (cameraController == null || !cameraController.value.isInitialized) {
-      return;
-    }
-
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    // Hanya dispose saat paused (app benar-benar ke background)
+    // inactive terlalu sering terpicu (navigasi, dialog, dll) dan tidak perlu dispose
+    if (state == AppLifecycleState.paused) {
       if (mounted) setState(() => _isInit = false);
-      cameraController.dispose();
+      await _controller?.dispose();
+      _controller = null;
     } else if (state == AppLifecycleState.resumed) {
-      _setupCameraController(cameraController.description);
+      if (!_isInit && _cameras.isNotEmpty) {
+        await _setupCameraController(_cameras[_selectedCameraIndex]);
+      }
     }
   }
 
@@ -99,13 +99,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       _processImage(File(image.path));
     } catch (e) {
       debugPrint("Error taking picture: $e");
-    }
-  }
-
-  Future<void> _pickFromGallery() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      _processImage(File(pickedFile.path));
     }
   }
 
@@ -230,6 +223,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     if (!_isInit || _controller == null) {
+      // Re-init otomatis jika kamera belum siap (misal kembali dari halaman lain)
+      if (_cameras.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_isInit) _initCamera();
+        });
+      }
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator(color: AppColors.primaryContainer)),
@@ -284,11 +283,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
               children: [
                 // Camera Actions
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildGalleryButton(),
                     _buildShutterButton(),
-                    _buildCircularButton(Icons.cached, _switchCamera),
                   ],
                 ),
               ],
@@ -310,21 +307,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 24),
-      ),
-    );
-  }
-
-  Widget _buildGalleryButton() {
-    return GestureDetector(
-      onTap: _pickFromGallery,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withAlpha(50), width: 2),
-        ),
-        child: const Icon(Icons.photo_library, color: Colors.white, size: 24),
       ),
     );
   }
@@ -418,31 +400,6 @@ class _ViewfinderOverlay extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              // Intelligent feedback badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(25),
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(color: Colors.white.withAlpha(50)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.restaurant, color: AppColors.primaryContainer, size: 20),
-                    SizedBox(width: 12),
-                    Text(
-                      'Ready to Scan',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
                       ),
                     ),
                   ],

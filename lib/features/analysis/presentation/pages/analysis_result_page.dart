@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/models/prediction_result.dart';
+import '../../domain/models/nutrition_info.dart';
+import '../../domain/models/meal_info.dart';
 import '../providers/analysis_provider.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../history/domain/models/meal_log.dart';
 import '../../../history/presentation/providers/history_provider.dart';
+import '../../../../services/storage/meal_extras_storage.dart';
 
 class AnalysisResultPage extends ConsumerStatefulWidget {
   final File? imageFile;
@@ -27,6 +30,7 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
   final String _geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
   bool _needsKeyInput = false;
   bool _isSaving = false;
+  bool _showFullInstructions = false;
 
   @override
   void initState() {
@@ -62,12 +66,14 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
             child: _buildCircleButton(Icons.arrow_back, () => context.pop()),
           ),
           // Add to log sticky button
-          if (!state.isLoading && state.nutritionInfo != null)
+          if (!state.isLoading && (state.nutritionInfo != null || state.mealInfo != null))
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
-              child: _buildStickyButton(state),
+              child: widget.prediction.confidence >= 0.1
+                  ? _buildStickyButton(state)
+                  : _buildLowConfidenceBanner(),
             ),
         ],
       ),
@@ -85,10 +91,14 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
         else ...[
           if (state.error != null)
             SliverToBoxAdapter(child: _buildErrorBanner(state.error!)),
+          if (state.geminiError != null)
+            SliverToBoxAdapter(child: _buildGeminiErrorBanner(state.geminiError!)),
           if (state.nutritionInfo != null)
             SliverToBoxAdapter(child: _buildNutritionSection(state.nutritionInfo!)),
           if (state.mealInfo != null)
-            SliverToBoxAdapter(child: _buildRecipeSection(state.mealInfo!)),
+            SliverToBoxAdapter(child: _buildRecipeSection(state.mealInfo!))
+          else if (!state.isLoading)
+            SliverToBoxAdapter(child: _buildNoRecipeBanner()),
           // Bottom padding for sticky button
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -225,6 +235,56 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
           Expanded(
             child: Text(error,
                 style: AppTypography.bodySmall.copyWith(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoRecipeBanner() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.outlineVariant.withAlpha(60)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.menu_book_outlined, size: 18, color: AppColors.onSurfaceVariant),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Referensi resep tidak ditemukan untuk makanan ini.',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.onSurfaceVariant),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeminiErrorBanner(String error) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withAlpha(20),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withAlpha(80)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Info nutrisi dari Gemini tidak tersedia. Menampilkan referensi resep saja.',
+              style: TextStyle(color: Colors.orange, fontSize: 12),
+            ),
           ),
         ],
       ),
@@ -396,14 +456,66 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
                   Text(
                     meal.instructions!,
                     style: AppTypography.bodySmall.copyWith(height: 1.6),
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: _showFullInstructions ? null : 4,
+                    overflow: _showFullInstructions ? TextOverflow.visible : TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _showFullInstructions = !_showFullInstructions),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _showFullInstructions ? 'Tampilkan lebih sedikit' : 'Baca selengkapnya',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          _showFullInstructions ? Icons.expand_less : Icons.expand_more,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLowConfidenceBanner() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 16, offset: const Offset(0, -4))],
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.errorContainer.withAlpha(40),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.error.withAlpha(80)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                "Confidence terlalu rendah (< 10%). Tidak dapat menyimpan ke riwayat.",
+                style: AppTypography.bodySmall.copyWith(color: AppColors.error),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -423,7 +535,7 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          onPressed: _isSaving ? null : () => _saveToLog(state.nutritionInfo!),
+          onPressed: _isSaving ? null : () => _saveToLog(state.nutritionInfo, state.mealInfo),
           icon: _isSaving
               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Icon(Icons.add, color: Colors.white),
@@ -508,21 +620,25 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
     );
   }
 
-  Future<void> _saveToLog(dynamic info) async {
+  Future<void> _saveToLog(NutritionInfo? info, MealInfo? mealInfo) async {
     setState(() => _isSaving = true);
-    final kaloriStr = info.calories.toString().replaceAll(RegExp(r'[^0-9]'), '');
-    final proteinStr = info.protein.toString().replaceAll(RegExp(r'[^0-9]'), '');
+    int parse(String? raw) =>
+        int.tryParse(raw?.replaceAll(RegExp(r'[^0-9]'), '') ?? '') ?? 0;
 
     final log = MealLog(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       label: widget.prediction.label,
       imagePath: widget.imageFile?.path ?? '',
-      calories: int.tryParse(kaloriStr) ?? 0,
-      protein: int.tryParse(proteinStr) ?? 0,
+      calories: parse(info?.calories),
+      protein: parse(info?.protein),
+      carbohydrates: parse(info?.carbohydrates),
+      fat: parse(info?.fat),
+      fiber: parse(info?.fiber),
       date: DateTime.now(),
     );
 
     await ref.read(historyProvider.notifier).addMeal(log);
+    await MealExtrasStorageService().saveExtras(log.id, info, mealInfo);
 
     if (mounted) {
       context.go('/history');

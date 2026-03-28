@@ -22,4 +22,12 @@ class NutritionInfo {
       protein: json['protein']?.toString() ?? '-',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'kalori': calories,
+    'karbohidrat': carbohydrates,
+    'lemak': fat,
+    'serat': fiber,
+    'protein': protein,
+  };
 }

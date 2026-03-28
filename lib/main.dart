@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'app/router.dart';
 import 'app/theme/app_theme.dart';
+import 'services/storage/meal_extras_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,7 @@ void main() async {
 
   // Initialize Hive
   await Hive.initFlutter();
+  await MealExtrasStorageService().init();
 
   runApp(
     const ProviderScope(

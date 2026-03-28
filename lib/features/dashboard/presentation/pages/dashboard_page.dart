@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../history/presentation/providers/history_provider.dart';
+import '../providers/gemini_status_provider.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -40,7 +41,7 @@ class DashboardPage extends ConsumerWidget {
             children: [
               _buildHeader(),
               const SizedBox(height: 12),
-              _buildGeminiStatus(),
+              _buildGeminiStatus(ref),
               const SizedBox(height: 20),
               _buildEnergyCard(totalCalories),
               const SizedBox(height: 24),
@@ -86,37 +87,70 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildGeminiStatus() {
-    const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-    final isReady = apiKey.isNotEmpty;
+  Widget _buildGeminiStatus(WidgetRef ref) {
+    final statusAsync = ref.watch(geminiStatusProvider);
 
+    return statusAsync.when(
+      loading: () => _buildStatusChip(
+        icon: Icons.hourglass_empty,
+        label: 'Memeriksa Gemini AI...',
+        color: AppColors.onSurfaceVariant,
+        bgAlpha: 15,
+        borderAlpha: 40,
+      ),
+      error: (_, _e) => _buildStatusChip(
+        icon: Icons.warning_amber_outlined,
+        label: 'Gagal memeriksa Gemini',
+        color: AppColors.error,
+        bgAlpha: 15,
+        borderAlpha: 60,
+      ),
+      data: (info) {
+        final color = switch (info.status) {
+          GeminiStatus.ready => AppColors.primary,
+          GeminiStatus.networkError => Colors.orange,
+          _ => AppColors.error,
+        };
+        final icon = switch (info.status) {
+          GeminiStatus.ready => Icons.check_circle_outline,
+          GeminiStatus.networkError => Icons.wifi_off_outlined,
+          GeminiStatus.invalidKey => Icons.vpn_key_off_outlined,
+          GeminiStatus.noKey => Icons.key_off_outlined,
+          _ => Icons.warning_amber_outlined,
+        };
+        return _buildStatusChip(
+          icon: icon,
+          label: info.message,
+          color: color,
+          bgAlpha: 15,
+          borderAlpha: 60,
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required int bgAlpha,
+    required int borderAlpha,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isReady
-            ? AppColors.primary.withAlpha(15)
-            : AppColors.error.withAlpha(15),
+        color: color.withAlpha(bgAlpha),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isReady
-              ? AppColors.primary.withAlpha(60)
-              : AppColors.error.withAlpha(60),
-        ),
+        border: Border.all(color: color.withAlpha(borderAlpha)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isReady ? Icons.check_circle_outline : Icons.warning_amber_outlined,
-            size: 16,
-            color: isReady ? AppColors.primary : AppColors.error,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
-            isReady ? 'Gemini AI siap digunakan' : 'Gemini API Key belum dikonfigurasi',
-            style: AppTypography.labelMedium.copyWith(
-              color: isReady ? AppColors.primary : AppColors.error,
-            ),
+            label,
+            style: AppTypography.labelMedium.copyWith(color: color),
           ),
         ],
       ),
