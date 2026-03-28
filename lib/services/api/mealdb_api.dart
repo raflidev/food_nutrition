@@ -6,7 +6,6 @@ class MealDbApi {
   final Dio _dio = Dio();
 
   Future<MealInfo?> searchMeal(String foodName) async {
-    // Coba beberapa strategi pencarian agar lebih banyak hasil yang cocok
     final queries = _buildSearchQueries(foodName);
 
     for (final query in queries) {
@@ -32,15 +31,11 @@ class MealDbApi {
 
   List<String> _buildSearchQueries(String foodName) {
     final queries = <String>[];
-    // 1. Nama asli
     queries.add(foodName);
-    // 2. Kata pertama saja (misal "Ayam masak merah" → "Ayam")
     final words = foodName.trim().split(' ');
     if (words.length > 1) queries.add(words.first);
-    // 3. Dua kata pertama
     if (words.length > 2) queries.add('${words[0]} ${words[1]}');
-    // 4. Kata terakhir (misal "Chicken Tikka Masala" → "Masala")
     if (words.length > 1) queries.add(words.last);
-    return queries.toSet().toList(); // deduplicate
+    return queries.toSet().toList();
   }
 }

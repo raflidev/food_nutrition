@@ -57,7 +57,6 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
-// Shell widget that includes the Bottom Navigation Bar
 class ScaffoldWithNavBar extends StatelessWidget {
   const ScaffoldWithNavBar({
     required this.child,

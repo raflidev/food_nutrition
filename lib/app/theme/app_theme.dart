@@ -27,13 +27,13 @@ class AppTheme {
       ),
       textTheme: AppTypography.textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.white.withAlpha(204), //.withOpacity(0.8)
+        backgroundColor: Colors.white.withAlpha(204),
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         iconTheme: const IconThemeData(color: AppColors.onSurface),
         titleTextStyle: AppTypography.headlineSmall.copyWith(
-          color: Colors.green[900], // Adjust dynamically if needed
+          color: Colors.green[900],
         ),
       ),
       cardTheme: CardThemeData(
@@ -41,7 +41,7 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24), // xl radius
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -51,7 +51,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(9999), // full rounded
+            borderRadius: BorderRadius.circular(9999),
           ),
           textStyle: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w700),
         ),
@@ -61,7 +61,7 @@ class AppTheme {
         size: 24,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Colors.white.withAlpha(230), // .withOpacity(0.9)
+        backgroundColor: Colors.white.withAlpha(230),
         elevation: 0,
         selectedItemColor: Colors.green[800],
         unselectedItemColor: Colors.grey[500],

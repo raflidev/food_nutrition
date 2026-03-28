@@ -16,13 +16,12 @@ class DashboardPage extends ConsumerWidget {
 
     int totalCalories = 0;
     int totalProtein = 0;
-    
-    // Hitung total kalori hari ini
+
     historyState.whenData((meals) {
       final today = DateTime.now();
-      final todayMeals = meals.where((m) => 
-        m.date.year == today.year && 
-        m.date.month == today.month && 
+      final todayMeals = meals.where((m) =>
+        m.date.year == today.year &&
+        m.date.month == today.month &&
         m.date.day == today.day
       );
       for (var meal in todayMeals) {
@@ -98,7 +97,7 @@ class DashboardPage extends ConsumerWidget {
         bgAlpha: 15,
         borderAlpha: 40,
       ),
-      error: (_, _e) => _buildStatusChip(
+      error: (_, e) => _buildStatusChip(
         icon: Icons.warning_amber_outlined,
         label: 'Gagal memeriksa Gemini',
         color: AppColors.error,
@@ -198,7 +197,6 @@ class DashboardPage extends ConsumerWidget {
   }
 
   Widget _buildMacroRings(int totalProtein) {
-    // Dummy values for demonstration, protein comes from real data
     return Row(
       children: [
         Expanded(
@@ -215,7 +213,7 @@ class DashboardPage extends ConsumerWidget {
   Widget _buildMacroCard(String label, String value, int goal, Color bgColor, Color textColor) {
     final int currentVal = int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
     final double progress = (currentVal / goal).clamp(0.0, 1.0);
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -276,9 +274,9 @@ class DashboardPage extends ConsumerWidget {
     return historyState.when(
       data: (meals) {
         final today = DateTime.now();
-        final todayMeals = meals.where((m) => 
-          m.date.year == today.year && 
-          m.date.month == today.month && 
+        final todayMeals = meals.where((m) =>
+          m.date.year == today.year &&
+          m.date.month == today.month &&
           m.date.day == today.day
         ).toList();
 
@@ -327,7 +325,7 @@ class DashboardPage extends ConsumerWidget {
                       Text(meal.label, style: AppTypography.titleMedium),
                       const SizedBox(height: 4),
                       Text(
-                        "${meal.calories} kcal • ${meal.date.hour}:${meal.date.minute.toString().padLeft(2, '0')}", 
+                        "${meal.calories} kcal • ${meal.date.hour}:${meal.date.minute.toString().padLeft(2, '0')}",
                         style: AppTypography.bodySmall,
                       ),
                     ],

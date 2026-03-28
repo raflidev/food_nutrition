@@ -59,13 +59,11 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
       body: Stack(
         children: [
           _buildBody(state),
-          // Back button overlay
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 16,
             child: _buildCircleButton(Icons.arrow_back, () => context.pop()),
           ),
-          // Add to log sticky button
           if (!state.isLoading && (state.nutritionInfo != null || state.mealInfo != null))
             Positioned(
               bottom: 0,
@@ -83,7 +81,6 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
   Widget _buildBody(AnalysisState state) {
     return CustomScrollView(
       slivers: [
-        // Hero image + food name
         SliverToBoxAdapter(child: _buildHeroSection()),
 
         if (state.isLoading)
@@ -99,7 +96,6 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
             SliverToBoxAdapter(child: _buildRecipeSection(state.mealInfo!))
           else if (!state.isLoading)
             SliverToBoxAdapter(child: _buildNoRecipeBanner()),
-          // Bottom padding for sticky button
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ],
@@ -112,7 +108,6 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
 
     return Stack(
       children: [
-        // Food image
         SizedBox(
           height: screenHeight,
           width: double.infinity,
@@ -125,7 +120,6 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
                   ),
                 ),
         ),
-        // Gradient overlay
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -141,7 +135,6 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
             ),
           ),
         ),
-        // Food name + confidence at bottom of image
         Positioned(
           left: 20,
           right: 20,
@@ -149,7 +142,6 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // AI badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -181,7 +173,6 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
-              // Confidence bar
               Row(
                 children: [
                   Text("Confidence $confidence%",
@@ -308,10 +299,8 @@ class _AnalysisResultPageState extends ConsumerState<AnalysisResultPage> {
             ],
           ),
           const SizedBox(height: 14),
-          // Calories card (wide)
           _buildCalorieCard(info.calories),
           const SizedBox(height: 12),
-          // Macro grid 3 columns
           Row(
             children: [
               Expanded(child: _buildMacroTile(Icons.egg_outlined, "Protein", info.protein, AppColors.tertiaryContainer, AppColors.onTertiaryContainer)),

@@ -23,7 +23,6 @@ final geminiStatusProvider = FutureProvider<GeminiStatusInfo>((ref) async {
 
   try {
     final model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey);
-    // Test call minimal — hanya minta satu kata agar cepat
     await model.generateContent([Content.text('Reply with just: ok')]);
     return const GeminiStatusInfo(GeminiStatus.ready, 'Gemini AI siap digunakan');
   } on SocketException {
@@ -44,7 +43,7 @@ final geminiStatusProvider = FutureProvider<GeminiStatusInfo>((ref) async {
     }
     if (msg.contains('quota') || msg.contains('resource_exhausted')) {
       return const GeminiStatusInfo(
-        GeminiStatus.ready, // Key valid, tapi kuota habis — masih bisa dipakai nanti
+        GeminiStatus.ready,
         'Gemini siap (kuota terbatas)',
       );
     }

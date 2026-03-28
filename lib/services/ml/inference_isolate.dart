@@ -15,12 +15,7 @@ class InferenceResult {
   InferenceResult({required this.outputProbabilities, required this.inferenceTime});
 }
 
-// NOTE: We put the actual isolate execution logic in the classifier_service
-// since tflite_flutter Interpreter needs to be instantiated inside the isolate
-// or sent correctly. We provide helper methods here.
-
 abstract class InferenceIsolateHelper {
-  // Mengembalikan flat List<int> uint8 (0-255), akan di-reshape ke [1, size, size, 3] di classifier
   static List<int>? preprocessImage(String imagePath, int inputSize) {
     try {
       final imageBytes = File(imagePath).readAsBytesSync();

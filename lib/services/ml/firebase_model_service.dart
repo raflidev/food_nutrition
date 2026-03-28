@@ -4,18 +4,15 @@ import 'package:firebase_ml_model_downloader/firebase_ml_model_downloader.dart';
 import 'package:flutter/foundation.dart';
 
 class FirebaseModelService {
-  static const String modelName = 'food_classifier'; // Nama model di Firebase Console
+  static const String modelName = 'food_classifier';
 
-  /// Mengunduh model dari Firebase ML secara dinamis
   static Future<File?> downloadModel() async {
     try {
-      // Pastikan Firebase sudah diinisialisasi
       if (Firebase.apps.isEmpty) {
         debugPrint("Firebase not initialized. Cannot download model.");
         return null;
       }
 
-      // Mendownload model (menggunakan model lokal jika tersedia dan up-to-date)
       final FirebaseCustomModel customModel = await FirebaseModelDownloader.instance.getModel(
           modelName,
           FirebaseModelDownloadType.localModelUpdateInBackground,

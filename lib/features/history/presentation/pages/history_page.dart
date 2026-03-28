@@ -7,8 +7,6 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../history/domain/models/meal_log.dart';
 import '../../../history/presentation/providers/history_provider.dart';
 
-// ── HistoryPage ────────────────────────────────────────────────────────────────
-
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
 
@@ -18,8 +16,6 @@ class HistoryPage extends ConsumerStatefulWidget {
 
 class _HistoryPageState extends ConsumerState<HistoryPage> {
   DateTime? _selectedDate;
-
-  // ── Build ──────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +33,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  // ── Content ────────────────────────────────────────────────
-
   Widget _buildContent(BuildContext context, List<MealLog> allMeals) {
-    // Apply date filter before grouping
     final meals = _selectedDate == null
         ? allMeals
         : allMeals.where((m) {
@@ -50,7 +43,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                 d.day == _selectedDate!.day;
           }).toList();
 
-    // Group by date
     final Map<String, List<MealLog>> grouped = {};
     for (final meal in meals) {
       final key = _dateKey(meal.date);
@@ -58,14 +50,12 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     }
     final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
-    // Subtitle text
     final subtitle = _selectedDate == null
         ? "${allMeals.length} makanan tercatat"
         : "${meals.length} makanan pada ${_formatSelectedDate(_selectedDate!)}";
 
     return CustomScrollView(
       slivers: [
-        // ── Header ──────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -86,7 +76,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         ),
                       ],
                     ),
-                    // Calendar button — active state when date is selected
                     Container(
                       decoration: BoxDecoration(
                         color: _selectedDate != null
@@ -107,7 +96,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   ],
                 ),
 
-                // Active filter chip — shown only when a date is selected
                 if (_selectedDate != null) ...[
                   const SizedBox(height: 10),
                   GestureDetector(
@@ -149,10 +137,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                 : _buildEmptyState(),
           )
         else ...[
-          // Summary strip
           SliverToBoxAdapter(child: _buildSummaryStrip(meals)),
 
-          // Meal groups
           for (final dateKey in sortedDates) ...[
             SliverToBoxAdapter(
               child: _buildDateHeader(context, dateKey, grouped[dateKey]!),
@@ -172,8 +158,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  // ── Calendar bottom sheet launcher ────────────────────────
-
   void _openCalendarSheet(BuildContext context, List<MealLog> allMeals) {
     showModalBottomSheet(
       context: context,
@@ -191,8 +175,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       ),
     );
   }
-
-  // ── Summary strip ──────────────────────────────────────────
 
   Widget _buildSummaryStrip(List<MealLog> meals) {
     final totalKcal = meals.fold(0, (s, m) => s + m.calories);
@@ -258,8 +240,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  // ── Date header ────────────────────────────────────────────
-
   Widget _buildDateHeader(
       BuildContext context, String dateKey, List<MealLog> meals) {
     final dailyKcal = meals.fold(0, (s, m) => s + m.calories);
@@ -302,8 +282,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       ),
     );
   }
-
-  // ── Meal card ──────────────────────────────────────────────
 
   Widget _buildMealCard(BuildContext context, WidgetRef ref, MealLog meal) {
     return Dismissible(
@@ -361,7 +339,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           ),
           child: Row(
             children: [
-              // Food image
               ClipRRect(
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
@@ -382,7 +359,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                 ),
               ),
               const SizedBox(width: 14),
-              // Info
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -415,7 +391,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   ),
                 ),
               ),
-              // Time
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Text(
@@ -443,8 +418,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           style: AppTypography.labelSmall.copyWith(color: fg, fontSize: 10)),
     );
   }
-
-  // ── Empty states ───────────────────────────────────────────
 
   Widget _buildEmptyState() {
     return Center(
@@ -512,8 +485,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  // ── Helpers ────────────────────────────────────────────────
-
   String _dateKey(DateTime date) =>
       "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
 
@@ -537,7 +508,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     return "$h:$m";
   }
 
-  /// e.g. "12 Mar 2026"
   String _formatSelectedDate(DateTime date) {
     const months = [
       '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
@@ -549,8 +519,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   int _uniqueDays(List<MealLog> meals) =>
       meals.map((m) => _dateKey(m.date)).toSet().length;
 }
-
-// ── _CalendarBottomSheet ───────────────────────────────────────────────────────
 
 class _CalendarBottomSheet extends StatefulWidget {
   const _CalendarBottomSheet({
@@ -570,7 +538,6 @@ class _CalendarBottomSheet extends StatefulWidget {
 class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
   late DateTime _displayMonth;
 
-  // Set of "yyyy-MM-dd" strings that have at least one meal
   late Set<String> _mealDates;
 
   @override
@@ -581,7 +548,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
             "${m.date.year}-${m.date.month.toString().padLeft(2, '0')}-${m.date.day.toString().padLeft(2, '0')}")
         .toSet();
 
-    // Start at the month of the most-recent meal, or current month
     if (widget.meals.isNotEmpty) {
       final latest = widget.meals
           .reduce((a, b) => a.date.isAfter(b.date) ? a : b)
@@ -592,8 +558,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
       _displayMonth = DateTime(now.year, now.month);
     }
   }
-
-  // ── Helpers ──────────────────────────────────────────────
 
   String _dateKey(DateTime d) =>
       "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
@@ -613,8 +577,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
     return now.year == d.year && now.month == d.month && now.day == d.day;
   }
 
-  // ── Navigation ───────────────────────────────────────────
-
   void _prevMonth() => setState(() {
         _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1);
       });
@@ -622,8 +584,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
   void _nextMonth() => setState(() {
         _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1);
       });
-
-  // ── Build ─────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -636,7 +596,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Container(
             width: 40,
             height: 4,
@@ -647,11 +606,9 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
           ),
           const SizedBox(height: 20),
 
-          // Title
           Text("Pilih Tanggal", style: AppTypography.titleMedium),
           const SizedBox(height: 20),
 
-          // Month navigation
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -673,7 +630,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
           ),
           const SizedBox(height: 12),
 
-          // Day-of-week header (Indonesian abbreviations, starting Sunday)
           Row(
             children: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
                 .map(
@@ -693,11 +649,9 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
           ),
           const SizedBox(height: 8),
 
-          // Calendar grid
           _buildGrid(),
           const SizedBox(height: 16),
 
-          // "Show all" button
           TextButton(
             onPressed: () {
               widget.onDateSelected(null);
@@ -713,19 +667,14 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
     );
   }
 
-  // ── Calendar grid ─────────────────────────────────────────
-
   Widget _buildGrid() {
     final year = _displayMonth.year;
     final month = _displayMonth.month;
 
-    // Day of week for the 1st (0 = Sunday, 6 = Saturday)
-    // DateTime weekday: 1 = Monday … 7 = Sunday, so we convert
-    final firstWeekday = DateTime(year, month, 1).weekday % 7; // Sun=0..Sat=6
+    final firstWeekday = DateTime(year, month, 1).weekday % 7;
 
     final daysInMonth = DateTime(year, month + 1, 0).day;
 
-    // Total cells = leading empty + days in month, rounded up to full weeks
     final totalCells = firstWeekday + daysInMonth;
     final rows = (totalCells / 7).ceil();
 
@@ -737,7 +686,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
             final dayNumber = cellIndex - firstWeekday + 1;
 
             if (dayNumber < 1 || dayNumber > daysInMonth) {
-              // Empty cell
               return const Expanded(child: SizedBox(height: 52));
             }
 
@@ -797,7 +745,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
                 ),
               ),
               const SizedBox(height: 3),
-              // Meal dot indicator
               Container(
                 width: 5,
                 height: 5,
@@ -814,8 +761,6 @@ class _CalendarBottomSheetState extends State<_CalendarBottomSheet> {
       ),
     );
   }
-
-  // ── Month/year label ──────────────────────────────────────
 
   String _monthYearLabel(DateTime d) {
     const months = [

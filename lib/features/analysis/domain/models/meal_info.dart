@@ -17,11 +17,10 @@ class MealInfo {
     List<String> foundIngredients = [];
     List<String> foundMeasures = [];
 
-    // TheMealDB returns strIngredient1 to strIngredient20 
     for (int i = 1; i <= 20; i++) {
       final ingredient = json['strIngredient$i'];
       final measure = json['strMeasure$i'];
-      
+
       if (ingredient != null && ingredient.toString().trim().isNotEmpty) {
         foundIngredients.add(ingredient);
         if (measure != null && measure.toString().trim().isNotEmpty) {

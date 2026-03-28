@@ -26,7 +26,7 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
   bool _isFetchingNutrition = false;
   String? _nutritionError;
   MealInfo? _localMeal;
-  MealLog? _updatedMeal; // set setelah berhasil generate nutrisi
+  MealLog? _updatedMeal;
 
   final String _geminiApiKey =
       const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
@@ -39,11 +39,9 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
   void initState() {
     super.initState();
 
-    // Load resep dari cache lokal
     final extras = MealExtrasStorageService().loadExtras(widget.meal.id);
     _localMeal = extras.meal;
 
-    // Ambil resep dari MealDB jika belum tersimpan lokal
     if (_localMeal == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(analysisProvider.notifier).loadMealDbOnly(widget.meal.label);
@@ -60,13 +58,11 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
       body: Stack(
         children: [
           _buildBody(state),
-          // Back button overlay
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 16,
             child: _buildCircleButton(Icons.arrow_back, () => context.pop()),
           ),
-          // Bottom saved-on bar
           Positioned(
             bottom: 0,
             left: 0,
@@ -100,14 +96,11 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
     );
   }
 
-  // ── Hero ─────────────────────────────────────────────────────────────────
-
   Widget _buildHeroSection() {
     const screenHeight = 320.0;
 
     return Stack(
       children: [
-        // Food image
         SizedBox(
           height: screenHeight,
           width: double.infinity,
@@ -117,7 +110,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
                   errorBuilder: (_, e, st) => _buildImagePlaceholder())
               : _buildImagePlaceholder(),
         ),
-        // Gradient overlay
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -133,7 +125,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
             ),
           ),
         ),
-        // Food name + date/time at bottom of image
         Positioned(
           left: 20,
           right: 20,
@@ -141,7 +132,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // History badge
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -207,8 +197,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
       ),
     );
   }
-
-  // ── Stored nutrition (always visible — from saved MealLog) ───────────────
 
   Widget _buildStoredNutritionSection() {
     return Padding(
@@ -331,11 +319,9 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
         fiber: parse(result.fiber),
       );
 
-      // Simpan ke Hive & extras cache
       await MealStorageService().saveMeal(updated);
       await MealExtrasStorageService().saveExtras(updated.id, result, _localMeal);
 
-      // Refresh history list
       ref.invalidate(historyProvider);
 
       if (mounted) setState(() => _updatedMeal = updated);
@@ -409,8 +395,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
       ),
     );
   }
-
-  // ── Recipe ───────────────────────────────────────────────────────────────
 
   Widget _buildRecipeSection(dynamic meal) {
     return Padding(
@@ -528,8 +512,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
     );
   }
 
-  // ── Banners ──────────────────────────────────────────────────────────────
-
   Widget _buildNoRecipeBanner() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -559,8 +541,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
     );
   }
 
-  // ── Loading ──────────────────────────────────────────────────────────────
-
   Widget _buildLoadingState() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -575,8 +555,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
       ],
     );
   }
-
-  // ── Bottom sticky bar ────────────────────────────────────────────────────
 
   Widget _buildSavedOnBar() {
     return Container(
@@ -606,8 +584,6 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
       ),
     );
   }
-
-  // ── Shared helpers ───────────────────────────────────────────────────────
 
   Widget _buildCircleButton(IconData icon, VoidCallback onTap) {
     return GestureDetector(

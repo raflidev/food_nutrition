@@ -1,6 +1,5 @@
 import 'package:hive/hive.dart';
 
-// Manual Hive adapter to avoid build_runner conflicts with Riverpod/Test
 class MealLog {
   final String id;
   final String label;
@@ -38,7 +37,6 @@ class MealLogAdapter extends TypeAdapter<MealLog> {
     final protein = reader.readInt();
     final date = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
 
-    // Field baru — backward compat: data lama tidak punya field ini
     int carbohydrates = 0;
     int fat = 0;
     int fiber = 0;
@@ -47,7 +45,6 @@ class MealLogAdapter extends TypeAdapter<MealLog> {
       fat = reader.readInt();
       fiber = reader.readInt();
     } catch (_) {
-      // Data lama, gunakan default 0
     }
 
     return MealLog(

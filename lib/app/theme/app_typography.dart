@@ -5,7 +5,6 @@ import 'app_colors.dart';
 class AppTypography {
   AppTypography._();
 
-  // Displays and Headlines use Manrope
   static TextStyle get displayLarge => GoogleFonts.manrope(
     fontSize: 57,
     fontWeight: FontWeight.w800,
@@ -63,7 +62,6 @@ class AppTypography {
     color: AppColors.onSurface,
   );
 
-  // Body and Labels use Plus Jakarta Sans
   static TextStyle get bodyLarge => GoogleFonts.plusJakartaSans(
     fontSize: 16,
     fontWeight: FontWeight.w500,

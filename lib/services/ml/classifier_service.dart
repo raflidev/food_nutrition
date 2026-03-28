@@ -18,8 +18,6 @@ class ClassifierService {
     if (_isInit) return;
     try {
       await _loadLabels();
-      // Advanced: Coba download model dari Firebase ML (dengan timeout 3 detik!)
-      // Jika internet lambat, kita jadikan fallback ke model lokal agar user tidak menunggu selamanya.
       try {
         _modelFile = await FirebaseModelService.downloadModel().timeout(const Duration(seconds: 3));
       } catch (e) {
@@ -37,41 +35,34 @@ class ClassifierService {
     try {
       final String labelStr = await rootBundle.loadString(_labelsPath);
       final lines = labelStr.split('\n').where((s) => s.trim().isNotEmpty).toList();
-      
+
       _labels = [];
       for (int i = 0; i < lines.length; i++) {
         final line = lines[i];
-        // Skip baris pertama jika itu adalah header (id,name)
         if (i == 0 && line.toLowerCase().contains('id') && line.toLowerCase().contains('name')) {
           continue;
         }
-        
-        // Split berdasarkan comma
+
         final parts = line.split(',');
         if (parts.length >= 2) {
-          // Ambil bagian 'name' dan bersihkan spasi/petik jika ada
-          String name = parts.sublist(1).join(',').trim(); // Antisipasi kalau nama punya koma
-          name = name.replaceAll('"', ''); // Hapus tanda petik ganda
+          String name = parts.sublist(1).join(',').trim();
+          name = name.replaceAll('"', '');
           _labels!.add(name);
         } else {
-          // Jika tidak ada koma, anggap saja 1 baris adalah nama (fallback)
           _labels!.add(line.trim().replaceAll('"', ''));
         }
       }
     } catch (e) {
       debugPrint("Warning: Could not load $_labelsPath ($e).");
-      // Fallback mock labels for testing if not provided by user
       _labels = ['Pizza', 'Burger', 'Salad', 'Sushi', 'Poke Bowl'];
     }
   }
 
-  /// Memproses klasifikasi gambar menggunakan Isolate (Thread Terpisah)
   Future<PredictionResult?> classifyImage(File imageFile) async {
     if (!_isInit) await initialize();
 
     final modelPath = _modelFile?.path ?? _localModelPath;
 
-    // Load model bytes di main isolate
     final Uint8List modelBytes;
     try {
       if (modelPath.startsWith('assets/')) {
@@ -85,8 +76,6 @@ class ClassifierService {
       return null;
     }
 
-    // Jalankan inference di main isolate (loading dialog sudah tampil, jank tidak masalah)
-    // Isolate.run() tidak bisa akses FFI bindings tflite yang diinisialisasi di Flutter engine
     return _runInference(imageFile.path, modelBytes);
   }
 
@@ -97,11 +86,10 @@ class ClassifierService {
 
       final inputTensor = interpreter.getInputTensor(0);
       final outputTensor = interpreter.getOutputTensor(0);
-      final inputShape = inputTensor.shape; // [1, 192, 192, 3]
-      final inputSize = inputShape[1];      // 192
-      final numClasses = outputTensor.shape.last; // 2024
+      final inputShape = inputTensor.shape;
+      final inputSize = inputShape[1];
+      final numClasses = outputTensor.shape.last;
 
-      // Preprocess: uint8 flat list, lalu reshape ke [1, inputSize, inputSize, 3]
       final flatInput = InferenceIsolateHelper.preprocessImage(imagePath, inputSize);
       if (flatInput == null) {
         debugPrint("Preprocessing failed.");
@@ -109,7 +97,6 @@ class ClassifierService {
       }
       final input = flatInput.reshape(inputShape);
 
-      // Output uint8: [1, numClasses]
       final outputBuffer = [List<int>.filled(numClasses, 0)];
 
       interpreter.run(input, outputBuffer);

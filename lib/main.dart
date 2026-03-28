@@ -9,13 +9,11 @@ import 'services/storage/meal_extras_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Hive
   await Hive.initFlutter();
   await MealExtrasStorageService().init();
 

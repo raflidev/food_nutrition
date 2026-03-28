@@ -7,8 +7,7 @@ class MealStorageService {
 
   Future<void> init() async {
     if (_isInitialized) return;
-    
-    // Asumsikan Hive.initFlutter() sudah dipanggil di main.dart
+
     Hive.registerAdapter(MealLogAdapter());
     await Hive.openBox<MealLog>(_boxName);
     _isInitialized = true;
@@ -23,7 +22,6 @@ class MealStorageService {
   Future<List<MealLog>> getMeals() async {
     if (!_isInitialized) await init();
     final box = Hive.box<MealLog>(_boxName);
-    // Sort descending by date
     final list = box.values.toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;

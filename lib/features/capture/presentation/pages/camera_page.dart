@@ -16,7 +16,6 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   CameraController? _controller;
   List<CameraDescription> _cameras = [];
-  int _selectedCameraIndex = 0;
   bool _isInit = false;
   FlashMode _flashMode = FlashMode.auto;
 
@@ -31,7 +30,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     try {
       _cameras = await availableCameras();
       if (_cameras.isNotEmpty) {
-        await _setupCameraController(_cameras[_selectedCameraIndex]);
+        await _setupCameraController(_cameras[0]);
       } else {
         debugPrint("No cameras found");
       }
@@ -41,7 +40,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   Future<void> _setupCameraController(CameraDescription description) async {
-    // Dispose dulu sebelum buat yang baru agar tidak 2 kamera terbuka sekaligus
     if (_controller != null) {
       await _controller!.dispose();
       _controller = null;
@@ -77,15 +75,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    // Hanya dispose saat paused (app benar-benar ke background)
-    // inactive terlalu sering terpicu (navigasi, dialog, dll) dan tidak perlu dispose
     if (state == AppLifecycleState.paused) {
       if (mounted) setState(() => _isInit = false);
       await _controller?.dispose();
       _controller = null;
     } else if (state == AppLifecycleState.resumed) {
       if (!_isInit && _cameras.isNotEmpty) {
-        await _setupCameraController(_cameras[_selectedCameraIndex]);
+        await _setupCameraController(_cameras[0]);
       }
     }
   }
@@ -103,12 +99,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   void _processImage(File imageFile) async {
-    // Coba crop gambar
     final File? cropped = await ImageUtils.cropImage(imageFile, context);
     if (cropped != null) {
       if (!mounted) return;
-      
-      // Munculkan Loading pop up agar user tahu proses sedang berjalan
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -140,14 +134,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
       try {
         final classifier = ClassifierService();
-        // Step 1: Initialize (akan mendownload model jika belum ada)
         await classifier.initialize();
-        // Step 2: Classify
         final prediction = await classifier.classifyImage(cropped);
         debugPrint("=== PREDICTION RESULT: $prediction, label=${prediction?.label}, conf=${prediction?.confidence}");
 
         if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).pop(); // Tutup layar Loading
+        Navigator.of(context, rootNavigator: true).pop();
 
         if (prediction != null) {
           context.push('/analysis', extra: {
@@ -161,7 +153,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         }
       } catch (e) {
         if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).pop(); // Tutup layar Loading
+        Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error AI Processing: $e')),
         );
@@ -169,19 +161,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
   }
 
-  void _switchCamera() async {
-    if (_cameras.length > 1) {
-      setState(() {
-        _isInit = false;
-        _selectedCameraIndex = (_selectedCameraIndex + 1) % _cameras.length;
-      });
-      await _setupCameraController(_cameras[_selectedCameraIndex]);
-    }
-  }
-
   void _toggleFlash() async {
     if (_controller == null) return;
-    
+
     FlashMode nextMode;
     switch (_flashMode) {
       case FlashMode.auto:
@@ -196,7 +178,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       default:
         nextMode = FlashMode.auto;
     }
-    
+
     try {
       await _controller!.setFlashMode(nextMode);
       setState(() {
@@ -223,7 +205,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     if (!_isInit || _controller == null) {
-      // Re-init otomatis jika kamera belum siap (misal kembali dari halaman lain)
       if (_cameras.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && !_isInit) _initCamera();
@@ -243,18 +224,15 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Live Camera Stream
           Transform.scale(
             scale: scale < 1 ? 1 / scale : scale,
             child: Center(
               child: CameraPreview(_controller!),
             ),
           ),
-          
-          // Viewfinder UI Overlay
+
           const _ViewfinderOverlay(),
 
-          // Top Bar (Close, Flash, Settings)
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 24,
@@ -274,14 +252,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             ),
           ),
 
-          // Bottom Controls (Gallery, Shutter, Switch)
           Positioned(
             bottom: 40,
             left: 0,
             right: 0,
             child: Column(
               children: [
-                // Camera Actions
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -340,7 +316,6 @@ class _ViewfinderOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Semi-transparent background mask (simulated here with gradient edges)
         Container(
           decoration: BoxDecoration(
             gradient: RadialGradient(
@@ -358,33 +333,27 @@ class _ViewfinderOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Target Frame
               SizedBox(
                 width: 250,
                 height: 250,
                 child: Stack(
                   children: [
-                    // Top Left
                     Positioned(
                       top: 0, left: 0,
                       child: _buildCorner(AppColors.primaryContainer, 0),
                     ),
-                    // Top Right
                     Positioned(
                       top: 0, right: 0,
                       child: _buildCorner(AppColors.primaryContainer, 1),
                     ),
-                    // Bottom Left
                     Positioned(
                       bottom: 0, left: 0,
                       child: _buildCorner(AppColors.primaryContainer, 3),
                     ),
-                    // Bottom Right
                     Positioned(
                       bottom: 0, right: 0,
                       child: _buildCorner(AppColors.primaryContainer, 2),
                     ),
-                    // Scan line
                     Center(
                       child: Container(
                         height: 2,
@@ -413,7 +382,6 @@ class _ViewfinderOverlay extends StatelessWidget {
   }
 
   Widget _buildCorner(Color color, int rotationIndex) {
-    // 0: TL, 1: TR, 2: BR, 3: BL
     return RotatedBox(
       quarterTurns: rotationIndex,
       child: Container(

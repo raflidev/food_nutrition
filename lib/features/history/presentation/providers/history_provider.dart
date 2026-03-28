@@ -13,7 +13,6 @@ class HistoryNotifier extends AsyncNotifier<List<MealLog>> {
 
   Future<void> addMeal(MealLog meal) async {
     await _service.saveMeal(meal);
-    // Refresh list
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _service.getMeals());
   }

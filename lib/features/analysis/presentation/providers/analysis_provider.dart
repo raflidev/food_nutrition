@@ -42,7 +42,6 @@ class AnalysisNotifier extends Notifier<AnalysisState> {
     final mealApi = MealDbApi();
     final geminiApi = GeminiService(geminiApiKey);
 
-    // Jalankan keduanya secara independen agar salah satu gagal tidak blok yang lain
     MealInfo? mealResult;
     try {
       mealResult = await mealApi.searchMeal(foodName);
