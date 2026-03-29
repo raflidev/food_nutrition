@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/image_utils.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../services/ml/classifier_service.dart';
@@ -161,6 +162,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _pickFromGallery() async {
+    final File? image = await ImageUtils.pickImage(ImageSource.gallery);
+    if (image != null) {
+      _processImage(image);
+    }
+  }
+
   void _toggleFlash() async {
     if (_controller == null) return;
 
@@ -256,15 +264,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             bottom: 40,
             left: 0,
             right: 0,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildShutterButton(),
-                  ],
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildGalleryButton(),
+                  _buildShutterButton(),
+                  const SizedBox(width: 56),
+                ],
+              ),
             ),
           ),
         ],
@@ -283,6 +293,22 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 24),
+      ),
+    );
+  }
+
+  Widget _buildGalleryButton() {
+    return GestureDetector(
+      onTap: _pickFromGallery,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(25),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withAlpha(80), width: 2),
+        ),
+        child: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 26),
       ),
     );
   }
