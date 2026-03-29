@@ -426,36 +426,61 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (meal.thumbUrl != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      meal.thumbUrl!,
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 Text(meal.name, style: AppTypography.titleMedium),
                 if (meal.ingredients.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
-                    "Bahan utama",
+                    "Bahan-bahan",
                     style: AppTypography.labelSmall
                         .copyWith(color: AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: List.generate(
-                      meal.ingredients.length > 6
-                          ? 6
-                          : meal.ingredients.length,
-                      (i) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          meal.ingredients[i],
-                          style: AppTypography.labelSmall,
-                        ),
+                  ...List.generate(meal.ingredients.length, (i) {
+                    final measure = i < meal.measures.length ? meal.measures[i] as String : '';
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              meal.ingredients[i],
+                              style: AppTypography.bodySmall,
+                            ),
+                          ),
+                          if (measure.isNotEmpty)
+                            Text(
+                              measure,
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                 ],
                 if (meal.instructions != null) ...[
                   const SizedBox(height: 14),

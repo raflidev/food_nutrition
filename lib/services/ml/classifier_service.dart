@@ -76,55 +76,31 @@ class ClassifierService {
       return null;
     }
 
-    return _runInference(imageFile.path, modelBytes);
-  }
+    final output = await compute(
+      runInferenceInBackground,
+      InferencePayload(imagePath: imageFile.path, modelBytes: modelBytes),
+    );
 
-  PredictionResult? _runInference(String imagePath, Uint8List modelBytes) {
-    Interpreter? interpreter;
-    try {
-      interpreter = Interpreter.fromBuffer(modelBytes);
+    if (output == null) return null;
 
-      final inputTensor = interpreter.getInputTensor(0);
-      final outputTensor = interpreter.getOutputTensor(0);
-      final inputShape = inputTensor.shape;
-      final inputSize = inputShape[1];
-      final numClasses = outputTensor.shape.last;
-
-      final flatInput = InferenceIsolateHelper.preprocessImage(imagePath, inputSize);
-      if (flatInput == null) {
-        debugPrint("Preprocessing failed.");
-        return null;
+    final scores = output.scores;
+    int maxScore = 0;
+    int maxIdx = -1;
+    for (int i = 0; i < scores.length; i++) {
+      if (scores[i] > maxScore) {
+        maxScore = scores[i];
+        maxIdx = i;
       }
-      final input = flatInput.reshape(inputShape);
-
-      final outputBuffer = [List<int>.filled(numClasses, 0)];
-
-      interpreter.run(input, outputBuffer);
-      interpreter.close();
-
-      final scores = outputBuffer[0];
-      int maxScore = 0;
-      int maxIdx = -1;
-      for (int i = 0; i < scores.length; i++) {
-        if (scores[i] > maxScore) {
-          maxScore = scores[i];
-          maxIdx = i;
-        }
-      }
-
-      debugPrint("Top prediction: idx=$maxIdx, score=$maxScore");
-
-      if (maxIdx < 0) return null;
-
-      final labelName = (_labels != null && maxIdx < _labels!.length)
-          ? _labels![maxIdx]
-          : "Unknown";
-
-      return PredictionResult(label: labelName, confidence: maxScore / 255.0);
-    } catch (e) {
-      interpreter?.close();
-      debugPrint("Inference error: $e");
-      return null;
     }
+
+    debugPrint("Top prediction: idx=$maxIdx, score=$maxScore");
+
+    if (maxIdx < 0) return null;
+
+    final labelName = (_labels != null && maxIdx < _labels!.length)
+        ? _labels![maxIdx]
+        : "Unknown";
+
+    return PredictionResult(label: labelName, confidence: maxScore / 255.0);
   }
 }

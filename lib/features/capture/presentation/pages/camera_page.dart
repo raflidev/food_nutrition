@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/utils/image_utils.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../features/analysis/domain/models/prediction_result.dart';
 import '../../../../services/ml/classifier_service.dart';
 
 class CameraPage extends StatefulWidget {
@@ -20,10 +22,16 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   bool _isInit = false;
   FlashMode _flashMode = FlashMode.auto;
 
+  final ClassifierService _classifier = ClassifierService();
+  Timer? _scanTimer;
+  PredictionResult? _livePrediction;
+  bool _isScanning = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _classifier.initialize();
     _initCamera();
   }
 
@@ -58,17 +66,42 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     try {
       await newController.initialize();
       if (mounted) {
-        setState(() {
-          _isInit = true;
-        });
+        setState(() => _isInit = true);
+        _startLiveScan();
       }
     } catch (e) {
       debugPrint("Camera initialize error: $e");
     }
   }
 
+  void _startLiveScan() {
+    _scanTimer?.cancel();
+    _scanTimer = Timer.periodic(const Duration(seconds: 2), (_) => _performLiveScan());
+  }
+
+  Future<void> _performLiveScan() async {
+    if (_isScanning) return;
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_controller!.value.isTakingPicture) return;
+
+    _isScanning = true;
+    try {
+      final XFile file = await _controller!.takePicture();
+      final result = await _classifier.classifyImage(File(file.path));
+      try {
+        File(file.path).deleteSync();
+      } catch (_) {}
+      if (mounted) setState(() => _livePrediction = result);
+    } catch (e) {
+      debugPrint("Live scan error: $e");
+    } finally {
+      _isScanning = false;
+    }
+  }
+
   @override
   void dispose() {
+    _scanTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
@@ -77,6 +110,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.paused) {
+      _scanTimer?.cancel();
       if (mounted) setState(() => _isInit = false);
       await _controller?.dispose();
       _controller = null;
@@ -89,13 +123,16 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   Future<void> _takePicture() async {
     if (_controller == null || !_controller!.value.isInitialized) return;
-    if (_controller!.value.isTakingPicture) return;
+    if (_controller!.value.isTakingPicture || _isScanning) return;
+
+    _scanTimer?.cancel();
 
     try {
       final XFile image = await _controller!.takePicture();
       _processImage(File(image.path));
     } catch (e) {
       debugPrint("Error taking picture: $e");
+      _startLiveScan();
     }
   }
 
@@ -134,9 +171,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       );
 
       try {
-        final classifier = ClassifierService();
-        await classifier.initialize();
-        final prediction = await classifier.classifyImage(cropped);
+        final prediction = await _classifier.classifyImage(cropped);
         debugPrint("=== PREDICTION RESULT: $prediction, label=${prediction?.label}, conf=${prediction?.confidence}");
 
         if (!mounted) return;
@@ -151,6 +186,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to analyze the image.')),
           );
+          _startLiveScan();
         }
       } catch (e) {
         if (!mounted) return;
@@ -158,7 +194,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error AI Processing: $e')),
         );
+        _startLiveScan();
       }
+    } else {
+      _startLiveScan();
     }
   }
 
@@ -189,9 +228,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
     try {
       await _controller!.setFlashMode(nextMode);
-      setState(() {
-        _flashMode = nextMode;
-      });
+      setState(() => _flashMode = nextMode);
     } catch (e) {
       debugPrint("Error toggling flash: $e");
     }
@@ -234,12 +271,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         children: [
           Transform.scale(
             scale: scale < 1 ? 1 / scale : scale,
-            child: Center(
-              child: CameraPreview(_controller!),
-            ),
+            child: Center(child: CameraPreview(_controller!)),
           ),
 
           const _ViewfinderOverlay(),
+
+          if (_livePrediction != null) _buildLivePredictionBadge(),
 
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
@@ -278,6 +315,71 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLivePredictionBadge() {
+    final confidence = _livePrediction!.confidence;
+    final confidencePct = (confidence * 100).toStringAsFixed(0);
+    final isHighConfidence = confidence >= 0.5;
+    final badgeColor = isHighConfidence ? AppColors.primaryContainer : Colors.white70;
+
+    return Positioned(
+      bottom: 160,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black.withAlpha(160),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: badgeColor.withAlpha(120),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: badgeColor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                _livePrediction!.label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeColor.withAlpha(40),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$confidencePct%',
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
